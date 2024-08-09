@@ -13,13 +13,17 @@ classdef text_mark < ced.channel.channel
             %   t = ced.channel.text_mark(h,chan_id)
 
             obj@ced.channel.channel(h,chan_id); 
+
+            obj.fs = 1/CEDS64TimeBase(obj.h2);
+            obj.max_time = obj.n_ticks/obj.fs;
+
             %cols does not appear to be useful
             %rows is supposed to be max string length but this 
             %   seems like max possible, not max actual
             %[iOk,Rows,Cols] = CEDS64GetExtMarkInfo( obj.h2, chan_id);
 
         end
-        function t = getData(obj)
+        function t = getData(obj,varargin)
             %CEDS64ReadExtMarks
             %{
 
@@ -40,17 +44,33 @@ classdef text_mark < ced.channel.channel
             %}
 
             in.max_events = 1e6;
-            in.time_range = [0 obj.max_time+1];
+            in.time_range = [0 obj.max_time];
+            in.n_init = 1000;
+            in.growth_rate = 2;
+            in = ced.sl.in.processVarargin(in,varargin);
             
-            t1 = in.time_range(1);
-            t2 = in.time_range(2);
+            sample_range = round(in.time_range*obj.fs);
+            %Bounds check ...
+            if sample_range(1) < 0 
+                error('error, invalid time requested')
+            end
+            if sample_range(2) > obj.n_ticks
+                error('error, invalid time requested')
+            end
+            %Request is non-inclusive
+            sample_range(2) = sample_range(2) + 1;
+            
+
+            t1 = sample_range(1);
+            t2 = sample_range(2);
 
             %state = ced.utils.turnStructWarningOn;
 
 
             %This call is really slow. Why doesn't the file track 
             %[a,b] = CEDS64ReadExtMarks(obj.h2,obj.chan_id,in.max_events,t1,t2);
-            [~,s] = ced.utils.readTextMarkersFast(obj.h2,obj.chan_id,in.max_events,t1,t2);
+            [~,s] = ced.utils.readTextMarkersFast(obj.h2,obj.chan_id,...
+                in.max_events,t1,t2,in.n_init,in.growth_rate);
 
             %ced.utils.restoreWarningState(state);
 

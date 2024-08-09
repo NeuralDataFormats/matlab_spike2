@@ -23,7 +23,8 @@ classdef adc < ced.channel.channel
             %CEDS64ReadWaveF Read waveform
 
             keyboard
-            [n_read,data,time] = CEDS64ReadWaveF();
+            n_samples = obj.max_time*obj.fs;
+            [n_read,data,start_time] = CEDS64ReadWaveF(obj.h2,obj.chan_id,n_samples,0);
 
 
             %{

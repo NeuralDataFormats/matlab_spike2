@@ -7,6 +7,7 @@ classdef channel < handle
         h ced.son.file_handle
         h2
         chan_id
+        n_ticks
         max_time
 
         name
@@ -18,8 +19,6 @@ classdef channel < handle
         scale
         chan_div
         y_range
-
-        n_ticks
     end
 
     methods
@@ -29,7 +28,10 @@ classdef channel < handle
             h2 = h.h;
             obj.h2 = h2;
             obj.chan_id = chan_id;
-            obj.max_time = CEDS64ChanMaxTime(h2,chan_id);
+
+            %Is this samples or time?
+            obj.n_ticks = CEDS64ChanMaxTime(h2,chan_id);
+            
 
             [~,obj.name] = CEDS64ChanTitle(h2,chan_id);
             [~,obj.units] = CEDS64ChanUnits(h2,chan_id);
@@ -43,6 +45,7 @@ classdef channel < handle
             %SampleRateInHz = 1.0/(CEDS64ChanDiv(fhand, 1)*CEDS64TimeBase(fhand));
 
             obj.fs = 1/(chan_div*time_base);
+            obj.max_time = obj.n_ticks/obj.fs;
 
             [~,chan_offset] = CEDS64ChanOffset(h2,chan_id);
             obj.offset = chan_offset;

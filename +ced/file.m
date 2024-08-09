@@ -13,6 +13,7 @@ classdef file
         h
         version
         file_size
+        n_ticks
         n_seconds
         start_date
         time_base
@@ -50,11 +51,7 @@ classdef file
 
             %temp = CEDS64GetFreeChan(obj.h.h)
 
-            obj.n_seconds = CEDS64MaxTime(h2);
-
-
-
-            
+            obj.n_ticks = CEDS64MaxTime(h2);
 
             [~,t] = CEDS64TimeDate(h2);
             t(1) = t(1)/10;
@@ -63,7 +60,7 @@ classdef file
             obj.start_date = datetime(t{:});
             obj.time_base = CEDS64TimeBase(h2);
 
-            %keyboard
+            obj.n_seconds = obj.n_ticks*obj.time_base;
 
             n_chans_max = CEDS64MaxChan(h2);
             chan_type = zeros(n_chans_max,1);

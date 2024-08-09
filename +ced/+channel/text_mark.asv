@@ -13,13 +13,17 @@ classdef text_mark < ced.channel.channel
             %   t = ced.channel.text_mark(h,chan_id)
 
             obj@ced.channel.channel(h,chan_id); 
+
+            obj.fs = 1/CEDS64TimeBase(obj.h2);
+            obj.max_time = obj.n_ticks/obj.fs;
+
             %cols does not appear to be useful
             %rows is supposed to be max string length but this 
             %   seems like max possible, not max actual
             %[iOk,Rows,Cols] = CEDS64GetExtMarkInfo( obj.h2, chan_id);
 
         end
-        function t = getData(obj)
+        function t = getData(obj,varargin)
             %CEDS64ReadExtMarks
             %{
 
@@ -40,8 +44,21 @@ classdef text_mark < ced.channel.channel
             %}
 
             in.max_events = 1e6;
-            in.time_range = [0 obj.max_time+1];
+            in.time_range = [0 obj.max_time];
+            in = ced.sl.in.processVarargin(in,varargin);
             
+            sample_range = round(in.time_range*obj.fs);
+            %Bounds check ...
+            if sample_range(1) < 0 
+                error('error, invalid time requested')
+            end
+            if sample_range(2) > obj.n_ticks
+                error('error, invalid time requested')
+            end
+            %Request is non-inclusive
+            sample_range(2) = sample_range(2) + 1;
+            
+
             t1 = in.time_range(1);
             t2 = in.time_range(2);
 
