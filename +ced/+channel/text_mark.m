@@ -2,26 +2,26 @@ classdef text_mark < ced.channel.channel
     %
     %   Class:
     %   ced.channel.text_mark
+    %
+    %   A Text Marker channel contains discrete points in times. Each point
+    %   in time contains:
+    %   - the time value itself
+    %   - a string (e.g., a comment)
+    %   - 4 codes - ??? What are these?
 
     properties
 
     end
 
     methods
-        function obj = text_mark(h,chan_id)
+        function obj = text_mark(h,chan_id,parent)
             %
-            %   t = ced.channel.text_mark(h,chan_id)
+            %   t = ced.channel.text_mark(h,chan_id,parent)
 
-            obj@ced.channel.channel(h,chan_id); 
+            obj@ced.channel.channel(h,chan_id,parent); 
 
-            obj.fs = 1/CEDS64TimeBase(obj.h2);
+            obj.fs = 1/parent.time_base;
             obj.max_time = obj.n_ticks/obj.fs;
-
-            %cols does not appear to be useful
-            %rows is supposed to be max string length but this 
-            %   seems like max possible, not max actual
-            %[iOk,Rows,Cols] = CEDS64GetExtMarkInfo( obj.h2, chan_id);
-
         end
         function t = getData(obj,varargin)
             %CEDS64ReadExtMarks
@@ -57,32 +57,36 @@ classdef text_mark < ced.channel.channel
             if sample_range(2) > obj.n_ticks
                 error('error, invalid time requested')
             end
-            %Request is non-inclusive
+
+            %Request is non-inclusive at the end so to be inclusive we
+            %add 1 to the sample count
             sample_range(2) = sample_range(2) + 1;
             
 
             t1 = sample_range(1);
             t2 = sample_range(2);
 
-            %state = ced.utils.turnStructWarningOn;
-
-
             %This call is really slow. Why doesn't the file track 
-            %[a,b] = CEDS64ReadExtMarks(obj.h2,obj.chan_id,in.max_events,t1,t2);
-            [~,s] = ced.utils.readTextMarkersFast(obj.h2,obj.chan_id,...
+            % state = ced.utils.turnStructWarningOn;
+            % tic
+            % [a,b] = CEDS64ReadExtMarks(obj.h2,obj.chan_id,in.max_events,t1,t2);
+            % toc
+            % ced.utils.restoreWarningState(state);
+
+            %New code
+            %----------------------------------
+            % tic
+            [n_reads,s] = ced.utils.readTextMarkersFast(obj.h2,obj.chan_id,...
                 in.max_events,t1,t2,in.n_init,in.growth_rate);
-
-            %ced.utils.restoreWarningState(state);
-
+            % toc
+            if n_reads < 0
+                error_code = n_reads;
+                %TODO: Provide more info on the error code
+                error('An error occurred when trying to read the Text Marker data, failed with error code: %d',error_code)
+            end
+            
             t = struct2table(s);
-
-            % msg = {b.m_Data}';
-            % time = [b.m_Time]';
-            % code1 = [b.m_Code1]';
-            % code2 = [b.m_Code2]';
-            % code3 = [b.m_Code3]';
-            % code4 = [b.m_Code4]';
-            % t = table(msg,time,code1,code2,code3,code4);
+            t.time = t.time./obj.fs;
 
         end
     end

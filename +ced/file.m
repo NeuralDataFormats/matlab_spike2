@@ -76,7 +76,7 @@ classdef file
                 switch chan_type(i)
                     case 0 %unused
                     case 1 %ADC - Waveform
-                        t = ced.channel.adc(obj.h,i);
+                        t = ced.channel.adc(obj.h,i,obj);
                     case 2 %EventFall
 
                     case 3 %EventRise
@@ -84,13 +84,13 @@ classdef file
                     case 4 %EventBoth
 
                     case 5 %Marker
-                        t = ced.channel.marker(obj.h,i);
+                        t = ced.channel.marker(obj.h,i,obj);
                     case 6 %WaveMark
 
                     case 7 %RealMark
 
                     case 8 %TextMark
-                        t = ced.channel.text_mark(obj.h,i);
+                        t = ced.channel.text_mark(obj.h,i,obj);
                 end
                 objs{i} = t;
                 chan_name{i} = t.name;

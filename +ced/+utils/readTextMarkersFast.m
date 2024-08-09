@@ -1,65 +1,108 @@
-function [ iRead, s ] = readTextMarkersFast(fhand, iChan, n_max, s1, s2, n_init, growth_rate)
+function [n_read,s] = readTextMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_init,growth_rate)
+%x Extracts data from Text Marker channels
 %
-%   ced.utils.readTextMarkersFast
+%   [n_read,s] = readTextMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_init,growth_rate)
 %
-%   rewrite of CEDS64ReadExtMarks
+%   Rewrite of CEDS64ReadExtMarks. That function uses MATLAB objects for
+%   each item and is PAINFULLY slow. Additionally, we've added the ability
+%   to grow the structure in a way that helps with memory allocation and
+%   speed. For my one example of roughly 43 events this took the read
+%   time from 2.4 seconds to 5 ms.
+%
+%   Inputs
+%   ------
+%   fhand
+%   chan_id
+%   n_max
+%   tick1
+%   tick2
+%   n_init
+%   growth_rate
+%
+%   Outputs
+%   -------
+%   
+%   See Also
+%   --------
+%   ced.channel.text_mark.getData
+%
+%   Warnings
+%   --------
+%   If the library changes this function may break
+
 
 if growth_rate <= 1
-    error('Invalid growth rate, needs to be >1')
+    error('Invalid growth rate, needs to be > 1')
 end
 
-%What is this????
-Size = calllib('ceds64int', 'S64ItemSize', fhand, iChan);
-Time = int64(s1);
+%What is Size????
+Size = calllib('ceds64int', 'S64ItemSize', fhand, chan_id);
+current_tick_time = int64(tick1);
 Count = 0;
 if (Size < 0)
-    iRead = -22;
+    n_read = -22;
     s = struct;
     return;
 end
 
-if (nargin < 5 || s2 < 0)
-    i64Upto = -1;
-    s2 = CEDS64MaxTime(fhand) + 1;
-else
-    i64Upto = s2;
+
+[iOk,Rows,Cols] = CEDS64GetExtMarkInfo(fhand,chan_id);
+if (iOk < 0 || Cols ~= 1)
+    %Note, not sure what Cols is ...
+    return
 end
 
-[iOk,Rows,Cols] = CEDS64GetExtMarkInfo(fhand,iChan);
-if ( (iOk < 0) || (Cols ~= 1) ), return; end
+%??? What is Rows?
+string_length = (Rows); % calculate the length of the string
 
-StrLen = (Rows); % calculate the length of the string
-%InMarker = struct(CEDMarker());
+%***********
+%   The format here may be critical. This comes from:
+%       struct(CEDMarker)
+%
+%I've hardcoded to avoid the struct warning silencing
+InMarker = struct('m_Time',int64(0),'m_Code1',uint8(0),'m_Code2',uint8(0),...
+    'm_Code3',uint8(0),'m_Code4',uint8(0));
 
-InMarker = struct('m_Time',int64(0),'m_Code1',uint8(0),'m_Code2',uint8(0),'m_Code3',uint8(0),'m_Code4',uint8(0));
-
-stringptr =  blanks(StrLen+8);
-%s(iN,1) = CEDTextMark();               % resize in one operation
+stringptr =  blanks(string_length+8);
 
 s = h__getStruct(n_init);
 
 maskcode = -1;
 for n=1:n_max
-    if (Time >= s2)
+    if (current_tick_time >= tick2)
         break;
     end
+
+    %Grow structure if we are going to exceed allocated size
+    %------------------------------
     if n > length(s)
-        n_total = ceil(growth_rate*length(s));
-        n_add = n_total - length(s);
+        n_new = ceil(growth_rate*length(s));
+        n_add = n_new - length(s);
+        if n_add < 10
+            %Ideally this code is never run, but just in case ...
+            n_add = 10;
+        end
         s = [s; h__getStruct(n_add)]; %#ok<AGROW>
     end
-    [iRead,s3,sText] = ...
-        calllib('ceds64int', 'S64Read1TextMark', fhand, iChan, InMarker, stringptr, Time, i64Upto, maskcode);
-    if (iRead > 0)
+
+    %Actual library call
+    %------------------------------
+    [n_read,s3,sText] = ...
+        calllib('ceds64int', 'S64Read1TextMark', fhand, chan_id, InMarker,...
+            stringptr, current_tick_time, tick2, maskcode);
+
+    %Logging
+    %------------------------------
+    if (n_read > 0)
         Count = Count + 1;
         s(n).time = s3.m_Time;
         s(n).code1 = s3.m_Code1;
-        s(n).code2 - s3.m_Code2;
+        s(n).code2 = s3.m_Code2;
         s(n).code3 = s3.m_Code3;
         s(n).code4 = s3.m_Code4;
         s(n).text = sText;
-        %??????
-        Time = s3.m_Time + 1;
+        %I think this is a starting point to look in the function
+        current_tick_time = s3.m_Time + 1;
     else
         break;
     end
@@ -71,7 +114,7 @@ else
     s = [];
 end
     
-iRead = Count;
+n_read = Count;
 end
 
 function s = h__getStruct(n)
