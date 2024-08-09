@@ -13,7 +13,7 @@ classdef adc < ced.channel.channel
 
             %Is this only true for waveform?
             %Floor? ceil? round?
-            obj.n_ticks = floor(parent.n_ticks/obj.chan_div);
+            obj.n_ticks = ceil(parent.n_ticks/obj.chan_div);
         end
         function [data,time] = getData(obj,varargin)
             %
@@ -31,7 +31,8 @@ classdef adc < ced.channel.channel
             %CEDS64ReadWaveS Read waveform data as 16-bit integers
             %CEDS64ReadWaveF Read waveform
 
-            n_samples = ceil(obj.max_time*obj.fs);
+            %n_samples = ceil(obj.max_time*obj.fs);
+            n_samples = obj.n_ticks;
             [n_read,data,start_time] = CEDS64ReadWaveF(obj.h2,obj.chan_id,n_samples,0);
 
 
