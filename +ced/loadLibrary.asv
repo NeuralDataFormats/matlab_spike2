@@ -1,0 +1,62 @@
+function loadLibrary()
+
+p = which('CEDS64LoadLib');
+lib_root = fileparts(p);
+
+if libisloaded('ceds64int')
+    CEDS64CloseAll(); % ...close all open SON files...
+    unloadlibrary ceds64int;   % ...unload the library...
+end
+
+%JAH: what might really matter is the MATLAB bit version, not
+%the processor ...
+switch lower(computer('arch'))
+    case 'win32'
+        libpath = strcat(sPath, '\x86');
+        addpath(libpath);
+        loadlibrary ('ceds64int.dll', @ceds32Prot); %...load it
+    case 'win64'
+        libpath = strcat(sPath, '\x64');
+        addpath(libpath);
+        loadlibrary ('ceds64int', @ceds64Prot); %...load it
+    otherwise
+        error('Code only supported for 32 and 64 bit Windows')
+end
+
+
+end
+
+% % work out what system we are working on (32 or 64-bit)
+% machine = computer('arch');
+% if (strcmp(machine,'win32'))
+%     Type = 32;
+% else
+%     Type = 64;
+% end
+
+% is the library loaded?
+if ~libisloaded('ceds64int') % if not...
+    if (Type == 32) %...find the 32-bit .dll and...
+        libpath = strcat(sPath, '\x86');
+        addpath(libpath);
+        loadlibrary ('ceds64int.dll', @ceds32Prot); %...load it
+    else
+        libpath = strcat(sPath, '\x64');
+        addpath(libpath);
+        loadlibrary ('ceds64int', @ceds64Prot); %...load it
+    end
+else % if so...
+    CEDS64CloseAll(); % ...close all open SON files...
+    unloadlibrary ceds64int;   % ...unload the library...
+    
+    if (Type == 32) %...find the 32-bit .dll and...
+        libpath = strcat(sPath, '\x86');
+        addpath(libpath);
+        loadlibrary ('ceds64int.dll', @ceds32Prot); %...load it
+    else
+        libpath = strcat(sPath, '\x64');
+        addpath(libpath);
+        loadlibrary ('ceds64int', @ceds64Prot); %...load it
+    end
+end
+end
