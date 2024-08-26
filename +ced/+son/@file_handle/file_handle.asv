@@ -2,6 +2,15 @@ classdef file_handle < handle
     %
     %   Class:
     %   ced.son.file_handle
+    %
+    %   All this does is 
+
+    %{
+        root = 'D:\Data\Mickle';
+        file_name = '03192024_20single_20void_20stimulation.smrx';
+        file_path = fullfile(root,file_name);
+        fh = ced.son.file_handle(file_path);
+    %}
 
     properties
         h
@@ -18,7 +27,14 @@ classdef file_handle < handle
         %   read write, if that fails try to open a read only open
         %   Outputs
         %   fhand - An integer handle for the file, otherwise a negative error code.
-            obj.h = 
+        
+            obj.h = CEDS64Open(file_path);
+        end
+        function delete(obj)
+            try
+                response = CEDS64Close(obj.h); %#ok<NASGU>
+                %disp(response);
+            end
         end
     end
 end

@@ -1,5 +1,6 @@
 classdef file
     %
+    %   Class:
     %   ced.file
 
     %{
@@ -7,7 +8,29 @@ classdef file
         file_name = '03192024_20single_20void_20stimulation.smrx';
         file_path = fullfile(root,file_name);
         file = ced.file(file_path);
+
+        %Where are the test files?
+        %D:\Data\Mickle\sample_files
+
+        name = 'example2.smr';
+        root = "D:\Data\Mickle\sample_files";
+        file = ced.file(fullfile(root,name));
+
+
+        %  data.smr - Only ADC & Marker
+        %  Demo.smr - ADC, Marker, EventFall
+        %  Demo1.smr - ADC, EventRise
+        %  Demo2.smr - ADC, Marker
+        %  example_unprocessed.smrx - Only ADC & Marker
+        %  example1.smr - invalid
+        %  example2.smr - invalid
+
     %}
+
+    properties (Constant)
+        TYPE_NAME_MAP = {'ADC','EventFall','EventRise','EventBoth',...
+                'Marker','WaveMark','RealMark','TextMark'};
+    end
 
     properties
         h
@@ -18,7 +41,8 @@ classdef file
         start_date
         time_base
 
-        chan_types
+        chan_type_numeric
+        chan_type_string
         chan_names
 
         waveforms
@@ -29,6 +53,13 @@ classdef file
 
     methods
         function obj = file(file_path)
+            %
+            %   f = ced.file(file_path)
+
+            if isstring(file_path)
+                file_path = char(file_path);
+            end
+
             obj.h = ced.son.file_handle(file_path);
             obj.version = ced.son.version(obj.h);
             h2 = obj.h.h;
@@ -63,17 +94,25 @@ classdef file
             obj.n_seconds = obj.n_ticks*obj.time_base;
 
             n_chans_max = CEDS64MaxChan(h2);
-            chan_type = zeros(n_chans_max,1);
+            chan_type_numeric = zeros(n_chans_max,1);
 
             objs = cell(n_chans_max,1);
             chan_name = cell(n_chans_max,1);
 
-            %TODO: If negative throw errror
+            %TODO: If negative throw the specific errror
+            %
+            %   Note, not all channels are actually used. It appears from
+            %   the documentation that the "generic" loading approach
+            %   is to iterate through all (i.e., can't skip to specific
+            %   channels that are in use)
+            %
+
+            
             for i = 1:n_chans_max
-                chan_type(i) = CEDS64ChanType(h2,i);  
+                chan_type_numeric(i) = CEDS64ChanType(h2,i);  
 
                 t = struct('name','unusued');
-                switch chan_type(i)
+                switch chan_type_numeric(i)
                     case 0 %unused
                     case 1 %ADC - Waveform
                         t = ced.channel.adc(obj.h,i,obj);
@@ -94,32 +133,30 @@ classdef file
                 end
                 objs{i} = t;
                 chan_name{i} = t.name;
-
-                %{
-iType Either the channel type or a negative error code. Channel types are: 0=channel unused, 1=Adc,
-2=EventFall, 3=EventRise, 4=EventBoth, 5=Marker, 6=WaveMark, 7=RealMark, 8=TextMark,
-9=RealWave.
-                %}
             end
 
+            %Filtering to used only channels
+            %---------------------------------------------
             chan_id = (1:n_chans_max)';
-            mask = chan_type ~= 0;
+            mask = chan_type_numeric ~= 0;
             chan_name = chan_name(mask);
-            chan_type = chan_type(mask);
+            chan_type_numeric = chan_type_numeric(mask);
             chan_id = chan_id(mask);
+            chan_type = obj.TYPE_NAME_MAP(chan_type_numeric)';
             objs = objs(mask);
             obj.t = table(chan_name,chan_type,chan_id);
-
-            obj.chan_types = chan_type;
+            obj.chan_type_numeric = chan_type_numeric;
             obj.chan_names = chan_name;
 
-            temp = objs(chan_type == 1);
+            %Filtering out specicic channel types into properties
+            %--------------------------------------------
+            temp = objs(chan_type_numeric == 1);
             obj.waveforms = [temp{:}];
 
-            temp = objs(chan_type == 5);
+            temp = objs(chan_type_numeric == 5);
             obj.markers = [temp{:}];
 
-            temp = objs(chan_type == 8);
+            temp = objs(chan_type_numeric == 8);
             obj.text_markers = [temp{:}];
 
 

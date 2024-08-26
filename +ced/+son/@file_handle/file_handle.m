@@ -2,6 +2,10 @@ classdef file_handle < handle
     %
     %   Class:
     %   ced.son.file_handle
+    %
+    %   All this does is hold onto the handle so that when
+    %   this class is deleted the handle to the underling C library
+    %   is deleted.
 
     %{
         root = 'D:\Data\Mickle';
@@ -11,6 +15,8 @@ classdef file_handle < handle
     %}
 
     properties
+        %This is the raw C handle that needs to be passed
+        %to the library functions.
         h
     end
 

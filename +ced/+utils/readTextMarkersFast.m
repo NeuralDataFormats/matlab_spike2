@@ -60,8 +60,8 @@ string_length = (Rows); % calculate the length of the string
 %       struct(CEDMarker)
 %
 %I've hardcoded to avoid the struct warning silencing
-InMarker = struct('m_Time',int64(0),'m_Code1',uint8(0),'m_Code2',uint8(0),...
-    'm_Code3',uint8(0),'m_Code4',uint8(0));
+
+InMarker = ced.utils.getCEDMarkerStruct(1);
 
 stringptr =  blanks(string_length+8);
 

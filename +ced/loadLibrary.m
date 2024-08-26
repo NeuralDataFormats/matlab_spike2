@@ -4,7 +4,7 @@ function loadLibrary()
 
 p = which('CEDS64LoadLib');
 if isempty(p)
-    error('Unable to find SON library')
+    error('Unable to find SON library, "CEDS64LoadLib" function missing')
     %Available at:
     %https://ced.co.uk/upgrades/spike2matson
     %

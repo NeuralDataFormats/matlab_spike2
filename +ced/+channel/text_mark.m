@@ -1,5 +1,7 @@
 classdef text_mark < ced.channel.channel
     %
+    %   TODO: consider inheriting from an event channel
+    %   
     %   Class:
     %   ced.channel.text_mark
     %
