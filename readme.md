@@ -13,7 +13,7 @@ This code loads Spike2 files into MATLAB.
 %TODO
 ```
 
-# Other Options #
+# Other Direct Options #
 
 - https://sourceforge.net/projects/sigtool/
    - appears to read the binary files directly
@@ -25,3 +25,13 @@ This code loads Spike2 files into MATLAB.
    - I think my code is more user friendly ...
 - https://neuroshare.sourceforge.net/DLLLinks.shtml
    - This is out of date
+
+# Other MATLAB Options #
+
+Other interfaces 
+
+# Python Options #
+
+These were useful 
+
+- **spike2py** - https://github.com/MartinHeroux/spike2py

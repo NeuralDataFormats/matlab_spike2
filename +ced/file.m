@@ -12,7 +12,7 @@ classdef file
         %Where are the test files?
         %D:\Data\Mickle\sample_files
 
-        name = 'example2.smr';
+        name = 'motor_units.smr';
         root = "D:\Data\Mickle\sample_files";
         file = ced.file(fullfile(root,name));
 
@@ -25,6 +25,12 @@ classdef file
         %  example1.smr - invalid
         %  example2.smr - invalid
 
+
+physiology.smr
+tremor_kinetic.smr
+tremor_mvc_ext.smr
+tremor_mvc_flex.smr
+tremor_postural.smr
     %}
 
     properties (Constant)
@@ -48,6 +54,7 @@ classdef file
         waveforms
         markers
         text_markers
+        wave_markers
         t
     end
 
@@ -125,7 +132,7 @@ classdef file
                     case 5 %Marker
                         t = ced.channel.marker(obj.h,i,obj);
                     case 6 %WaveMark
-
+                        t = ced.channel.wave_mark(obj.h,i,obj);
                     case 7 %RealMark
 
                     case 8 %TextMark
@@ -159,7 +166,8 @@ classdef file
             temp = objs(chan_type_numeric == 8);
             obj.text_markers = [temp{:}];
 
-
+            temp = objs(chan_type_numeric == 6);
+            obj.wave_markers = [temp{:}];
         end
     end
 end
