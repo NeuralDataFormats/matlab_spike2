@@ -10,17 +10,20 @@ nicer interface to that library.
 
 - finish data loading for all waveform types - only a couple are currently supported
 - create repo with just example files
-- move spike2matson code into this library and change installation accordingly
 - finish documentation
 - create some testing framework ...
 - There are a ton of places where we should be checking for errors but don't yet. The underlying mex returns error codes rather than directly throwing errors
 
 # Installation Steps #
 
-Work in Progress
+The folder that contains this file should be added to the MATLAB path.
 
-1. Download and install [this code](https://ced.co.uk/upgrades/spike2matson). Be sure to note the install location.
-2. 
+More info on that here:
+https://www.mathworks.com/help/matlab/matlab_env/add-remove-or-reorder-folders-on-the-search-path.html
+
+Note, I personally add the path at startup using my *startup.m* file
+
+Do not add the '+ced' folder to the path.
 
 # Usage #
 
