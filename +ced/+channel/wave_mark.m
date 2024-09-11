@@ -5,11 +5,8 @@ classdef wave_mark < ced.channel.channel
     %   Class:
     %   ced.channel.wave_mark
     %
-    %   A Text Marker channel contains discrete points in times. Each point
-    %   in time contains:
-    %   - the time value itself
-    %   - a string (e.g., a comment)
-    %   - 4 codes - ??? What are these?
+    %   A Wave Marker consists of events and snippets (sampled data over
+    %   a brief time window)
 
     properties
 
@@ -24,10 +21,15 @@ classdef wave_mark < ced.channel.channel
 
             obj.fs = 1/parent.time_base;
             obj.max_time = obj.n_ticks/obj.fs;
-
         end
-        function t = getData(obj,varargin)
+        function s = getData(obj,varargin)
+            %
+            %   Outputs
+            %   -------
+            %   t
 
+            in.wave_format = 'struct';
+            %   - matrix
             in.max_events = 1e6;
             in.time_range = [0 obj.max_time];
             in.n_init = 1000;
@@ -55,6 +57,16 @@ classdef wave_mark < ced.channel.channel
             %tic
             [n_read,s] = ced.utils.readWaveMarkersFast(h2,obj.chan_id,in.max_events,t1,t2,in.n_init,in.growth_rate);
             %toc
+            if n_read < 0
+                %TODO: Provide more details
+                error('Read error from ced.utils.readWaveMarkersFast')
+            end
+
+            switch in.wave_format
+                case 'struct'
+                    %do nothing
+                case 'matrix'
+            end
 
             keyboard
             %{

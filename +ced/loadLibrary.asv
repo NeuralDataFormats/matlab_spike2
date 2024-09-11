@@ -1,7 +1,39 @@
 function loadLibrary()
+%
+%   ced.loadLibrary()
+%
+%   Note this is called by ced.file if the library is not loaded
 
+%Handle 
 p = which('CEDS64LoadLib');
-lib_root = fileparts(p);
+
+if isempty(p)
+    file_path = mfilename('fullpath');
+    repo_root = fileparts(fileparts(file_path));
+    ced_code_root = fullfile(repo_root,'ced_provided_code','CEDS64ML');
+    adppath(ced_code_root);
+    switch mexext
+        case 'mexw64'
+        case 'mexw32'
+        otherwise
+    end
+    
+
+
+    error('Unable to find SON library, "CEDS64LoadLib" function missing')
+    %Available at:
+    %https://ced.co.uk/upgrades/spike2matson
+    %
+    %Installs by default to:
+    %addpath('C:\CEDMATLAB\CEDS64ML');
+    %
+    %
+end
+
+% lib_root = fileparts(p);
+
+%???? What about ceds32int - will that show up if installed on 32 bit
+%machine?
 
 if libisloaded('ceds64int')
     CEDS64CloseAll(); % ...close all open SON files...
@@ -10,53 +42,21 @@ end
 
 %JAH: what might really matter is the MATLAB bit version, not
 %the processor ...
-switch lower(computer('arch'))
-    case 'win32'
-        libpath = strcat(sPath, '\x86');
-        addpath(libpath);
-        loadlibrary ('ceds64int.dll', @ceds32Prot); %...load it
-    case 'win64'
-        libpath = strcat(sPath, '\x64');
-        addpath(libpath);
-        loadlibrary ('ceds64int', @ceds64Prot); %...load it
+switch mexext
+    case 'mexw32'
+        %JAH: User needs to add path on startup, not doing path management
+        %here
+        %
+        % libpath = strcat(sPath, '\x86');
+        % addpath(libpath);
+        loadlibrary('ceds64int.dll', @ceds32Prot); %...load it
+    case 'mexw64'
+        % libpath = strcat(sPath, '\x64');
+        % addpath(libpath);
+        loadlibrary('ceds64int', @ceds64Prot); %...load it
     otherwise
         error('Code only supported for 32 and 64 bit Windows')
 end
 
 
-end
-
-% % work out what system we are working on (32 or 64-bit)
-% machine = computer('arch');
-% if (strcmp(machine,'win32'))
-%     Type = 32;
-% else
-%     Type = 64;
-% end
-
-% is the library loaded?
-if ~libisloaded('ceds64int') % if not...
-    if (Type == 32) %...find the 32-bit .dll and...
-        libpath = strcat(sPath, '\x86');
-        addpath(libpath);
-        loadlibrary ('ceds64int.dll', @ceds32Prot); %...load it
-    else
-        libpath = strcat(sPath, '\x64');
-        addpath(libpath);
-        loadlibrary ('ceds64int', @ceds64Prot); %...load it
-    end
-else % if so...
-    CEDS64CloseAll(); % ...close all open SON files...
-    unloadlibrary ceds64int;   % ...unload the library...
-    
-    if (Type == 32) %...find the 32-bit .dll and...
-        libpath = strcat(sPath, '\x86');
-        addpath(libpath);
-        loadlibrary ('ceds64int.dll', @ceds32Prot); %...load it
-    else
-        libpath = strcat(sPath, '\x64');
-        addpath(libpath);
-        loadlibrary ('ceds64int', @ceds64Prot); %...load it
-    end
-end
 end

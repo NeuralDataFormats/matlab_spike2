@@ -12,39 +12,54 @@ classdef file
         %Where are the test files?
         %D:\Data\Mickle\sample_files
 
-        name = 'motor_units.smr';
+        name = 'Demo1.smr';
         root = "D:\Data\Mickle\sample_files";
         file = ced.file(fullfile(root,name));
 
+        w = file.waveforms(1);
+        d = w.getData();
+
+        clf
+        hold on
+        for i = 1:6
+            plot(d(i).time,d(i).data)
+        end
+        hold off
 
         %  data.smr - Only ADC & Marker
-        %  Demo.smr - ADC, Marker, EventFall
         %  Demo1.smr - ADC, EventRise
         %  Demo2.smr - ADC, Marker
         %  example_unprocessed.smrx - Only ADC & Marker
         %  example1.smr - invalid
         %  example2.smr - invalid
-
-
-physiology.smr
-tremor_kinetic.smr
-tremor_mvc_ext.smr
-tremor_mvc_flex.smr
-tremor_postural.smr
     %}
 
-    properties (Constant)
+    properties (Constant, Hidden)
         TYPE_NAME_MAP = {'ADC','EventFall','EventRise','EventBoth',...
                 'Marker','WaveMark','RealMark','TextMark'};
     end
 
     properties
+        file_name
+
         h
+
+        %short string for an app, normally app name that created file
+        app_id
+
+        %ced.son.version
         version
+        %NYI
         file_size
+        %NYI
+        file_comments
         n_ticks
         n_seconds
-        start_date
+        start_datetime
+
+        %This is the finest unit of time that the file supports
+        %
+        %Every sample or time point is some multiple of this time
         time_base
 
         chan_type_numeric
@@ -53,6 +68,8 @@ tremor_postural.smr
 
         waveforms
         markers
+        event_falls
+        event_rises
         text_markers
         wave_markers
         t
@@ -63,39 +80,52 @@ tremor_postural.smr
             %
             %   f = ced.file(file_path)
 
+            %Load the necessary library if not yet loaded
+            %-----------------------------------------------------
+            if ~libisloaded('ceds64int')
+                ced.loadLibrary();
+            end
+
             if isstring(file_path)
+                %calls to library don't support strings, only char array
                 file_path = char(file_path);
             end
+
+            [~,obj.file_name] = fileparts(file_path);
 
             obj.h = ced.son.file_handle(file_path);
             obj.version = ced.son.version(obj.h);
             h2 = obj.h.h;
 
-            %obj.n_ticks = CEDS64ChanMaxTime( fhand1, 1 )
-            %
-            %- short string for an app, normally app name that created file
-            %CEDS64AppID( fhand {, IDIn } )
-            %
-            %- comment for each channel
-            %CEDS64ChanComment
-            %
+            obj.app_id = CEDS64AppID(h2);
+
             %CEDS64FileSize
-            %
+            obj.file_size = CEDS64FileSize(h2);
+            
             %5 comments allowed
-            %CEDS64FileComment
-            %
-            %next free chan
-            %   CEDS64GetFreeChan(
 
-            %temp = CEDS64GetFreeChan(obj.h.h)
-
+            file_comments = cell(1,8);
+            for i = 1:8
+                [iOk,temp] = CEDS64FileComment(h2,i);
+                %TODO: Check iOk
+                file_comments{i} = temp;
+            end
+            mask = cellfun('isempty',file_comments);
+            obj.file_comments = file_comments(~mask);
+            
             obj.n_ticks = CEDS64MaxTime(h2);
 
+            %Format is:
+            %hundreths, s, min, h, day, month, year
             [~,t] = CEDS64TimeDate(h2);
-            t(1) = t(1)/10;
-            t = t(end:-1:1);
-            t = num2cell(t);
-            obj.start_date = datetime(t{:});
+            if all(t == 0)
+                obj.start_datetime = NaT;
+            else
+                t(1) = t(1)/10; %converting to ms
+                t = t(end:-1:1); %reverse for input into datetime
+                t = num2cell(t);
+                obj.start_datetime = datetime(t{:});
+            end
             obj.time_base = CEDS64TimeBase(h2);
 
             obj.n_seconds = obj.n_ticks*obj.time_base;
@@ -106,15 +136,10 @@ tremor_postural.smr
             objs = cell(n_chans_max,1);
             chan_name = cell(n_chans_max,1);
 
-            %TODO: If negative throw the specific errror
-            %
             %   Note, not all channels are actually used. It appears from
             %   the documentation that the "generic" loading approach
             %   is to iterate through all (i.e., can't skip to specific
             %   channels that are in use)
-            %
-
-            
             for i = 1:n_chans_max
                 chan_type_numeric(i) = CEDS64ChanType(h2,i);  
 
@@ -124,9 +149,9 @@ tremor_postural.smr
                     case 1 %ADC - Waveform
                         t = ced.channel.adc(obj.h,i,obj);
                     case 2 %EventFall
-
+                        t = ced.channel.event_rise_or_fall(obj.h,i,obj);
                     case 3 %EventRise
-
+                        t = ced.channel.event_rise_or_fall(obj.h,i,obj);
                     case 4 %EventBoth
 
                     case 5 %Marker
@@ -137,6 +162,8 @@ tremor_postural.smr
 
                     case 8 %TextMark
                         t = ced.channel.text_mark(obj.h,i,obj);
+                    otherwise
+                        error('Unexpected channel type: %d',chan_type_numeric(i))
                 end
                 objs{i} = t;
                 chan_name{i} = t.name;
@@ -154,11 +181,18 @@ tremor_postural.smr
             obj.t = table(chan_name,chan_type,chan_id);
             obj.chan_type_numeric = chan_type_numeric;
             obj.chan_names = chan_name;
+            obj.chan_type_string = chan_type;
 
             %Filtering out specicic channel types into properties
             %--------------------------------------------
             temp = objs(chan_type_numeric == 1);
             obj.waveforms = [temp{:}];
+
+            temp = objs(chan_type_numeric == 2);
+            obj.event_falls = [temp{:}];
+
+            temp = objs(chan_type_numeric == 3);
+            obj.event_rises = [temp{:}];
 
             temp = objs(chan_type_numeric == 5);
             obj.markers = [temp{:}];

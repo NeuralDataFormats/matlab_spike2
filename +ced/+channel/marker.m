@@ -68,6 +68,7 @@ classdef marker < ced.channel.channel
             %tic
             [n_read,s] = ced.utils.readMarkersFast(...  
                 h2,obj.chan_id,in.max_events,t1,t2,in.n_init,in.growth_rate);
+            
             if n_read < 0
                 %TODO: Provide more documentation on the error code
                 error('Error reading times')

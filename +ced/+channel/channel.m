@@ -3,6 +3,14 @@ classdef channel < handle
     %   Class:
     %   ced.channel.channel
 
+    %{
+    Calls not yet handled
+    ---------------------
+    %- comment for each channel
+    %CEDS64ChanComment
+
+    %}
+
     properties
         parent ced.file
         h ced.son.file_handle

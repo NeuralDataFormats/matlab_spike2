@@ -32,7 +32,17 @@ classdef file_handle < handle
         %   Outputs
         %   fhand - An integer handle for the file, otherwise a negative error code.
         
-            obj.h = CEDS64Open(file_path);
+        % 1: read only
+        % 0: read and write
+        % -1: try to open and read/write, if not use read-only
+
+            MODE = 1;
+       
+            obj.h = CEDS64Open(file_path,MODE);
+            if obj.h < 0
+                msg = ced.utils.CEDS64ErrorMessage(obj.h);
+                error('Unable to open requested file:\n"%s"\nreason from CED lib:\n%s',file_path,msg)
+            end
         end
         function delete(obj)
             try
