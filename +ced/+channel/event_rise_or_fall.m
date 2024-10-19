@@ -32,7 +32,6 @@ classdef event_rise_or_fall < ced.channel.channel
 
             h2 = obj.h.h;
             obj.ideal_rate = CEDS64IdealRate(h2,obj.chan_id);
-    
         end
         function times = getTimes(obj,varargin)
 

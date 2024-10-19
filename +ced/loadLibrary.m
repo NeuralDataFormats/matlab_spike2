@@ -10,12 +10,17 @@ function loadLibrary()
 %   It has not been tested with 32bit MATLAB
 %
 %   Note, this function modifies your MATLAB path
+%
+%
+%   Paths that get added:
+%   1) CEDS64ML folder
+%   2) The x64 or x32 folder (inside CEDS64ML)
 
 %Handle pathing
 %------------------------------------------
 p = which('CEDS64LoadLib');
 if isempty(p)
-    file_path = mfilename('fullpath');
+    file_path = which('ced.loadLibrary');
     repo_root = fileparts(fileparts(file_path));
     ced_code_root = fullfile(repo_root,'ced_provided_code','CEDS64ML');
     addpath(ced_code_root);

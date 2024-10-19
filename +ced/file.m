@@ -9,29 +9,12 @@ classdef file
         file_path = fullfile(root,file_name);
         file = ced.file(file_path);
 
-        %Where are the test files?
-        %D:\Data\Mickle\sample_files
-
-        name = 'Demo1.smr';
-        root = "D:\Data\Mickle\sample_files";
+        name = 'Demo_Jim.smrx';
+        root = 'D:\Data\Mickle\sample_files';
         file = ced.file(fullfile(root,name));
 
         w = file.waveforms(1);
         d = w.getData();
-
-        clf
-        hold on
-        for i = 1:6
-            plot(d(i).time,d(i).data)
-        end
-        hold off
-
-        %  data.smr - Only ADC & Marker
-        %  Demo1.smr - ADC, EventRise
-        %  Demo2.smr - ADC, Marker
-        %  example_unprocessed.smrx - Only ADC & Marker
-        %  example1.smr - invalid
-        %  example2.smr - invalid
     %}
 
     properties (Constant, Hidden)
@@ -70,6 +53,7 @@ classdef file
         markers
         event_falls
         event_rises
+        event_both
         text_markers
         wave_markers
         t
@@ -103,7 +87,6 @@ classdef file
             obj.file_size = CEDS64FileSize(h2);
             
             %5 comments allowed
-
             file_comments = cell(1,8);
             for i = 1:8
                 [iOk,temp] = CEDS64FileComment(h2,i);
@@ -153,7 +136,7 @@ classdef file
                     case 3 %EventRise
                         t = ced.channel.event_rise_or_fall(obj.h,i,obj);
                     case 4 %EventBoth
-
+                        t = ced.channel.event_both(obj.h,i,obj);
                     case 5 %Marker
                         t = ced.channel.marker(obj.h,i,obj);
                     case 6 %WaveMark
@@ -193,6 +176,9 @@ classdef file
 
             temp = objs(chan_type_numeric == 3);
             obj.event_rises = [temp{:}];
+
+            temp = objs(chan_type_numeric == 4);
+            obj.event_both = [temp{:}];
 
             temp = objs(chan_type_numeric == 5);
             obj.markers = [temp{:}];
