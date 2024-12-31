@@ -13,17 +13,25 @@ classdef event_rise_or_fall < ced.channel.channel
     %}
 
     properties
+        type
         ideal_rate
     end
 
     methods
-        function obj = event_rise_or_fall(h,chan_id,parent)
+        function obj = event_rise_or_fall(h,chan_id,parent,is_rise)
 
             obj@ced.channel.channel(h,chan_id,parent);
 
             obj.fs = 1/parent.time_base;
             obj.max_time = obj.n_ticks/obj.fs;
 
+            if is_rise
+                obj.type = "rise";
+            else
+                obj.type = "fall";
+            end
+            
+            
             %??? CEDS64IdealRate
             %
             %   - this appears to be a buffer setting so
@@ -34,6 +42,18 @@ classdef event_rise_or_fall < ced.channel.channel
             obj.ideal_rate = CEDS64IdealRate(h2,obj.chan_id);
         end
         function times = getTimes(obj,varargin)
+            %
+            %
+            %   Optional Inputs
+            %   ---------------
+            %   max_events : 1e6
+            %   time_range : default is entire range
+            %   n_init : default 1000
+            %       Initial guess for # of events
+            %   growth_rate : default 2
+            %       If the # of events exceeds our guess, we grow the
+            %       output array by this step size.
+            %   
 
             in.max_events = 1e6;
             in.time_range = [0 obj.max_time];

@@ -3,7 +3,8 @@ classdef event_both < ced.channel.channel
     %   Class:
     %   ced.channel.event_both
     %
-    %   This is basically an oscillatory signal
+    %   This is basically an oscillatory signal. The signal starts high or
+    %   low and then oscillates back and forth at various times.
 
     properties
         ideal_rate
@@ -14,7 +15,7 @@ classdef event_both < ced.channel.channel
     %   Check what n_ticks means for this type of event
     %
     %       - I think it points to the last switching time
-    
+
 
     methods
         function obj = event_both(h,chan_id,parent)
@@ -22,7 +23,7 @@ classdef event_both < ced.channel.channel
 
             obj.fs = 1/parent.time_base;
 
-            %I think this is the last time
+            %I think this is the last time of an event
             obj.max_time = obj.n_ticks/obj.fs;
 
             h2 = obj.h.h;
@@ -35,29 +36,47 @@ classdef event_both < ced.channel.channel
             %   -------
             %   return_format:
             %       - 'times'
-            %           - .times : times of all events
+            %           - .times : times of all transition events
             %           - .start_level 
             %               Note this is the rawest form of returning
             %               the data.
+            %           - .hit_event_max
+            %
             %       - 'time_series1'
-            %           - .x
+            %           - .x - the transition times
             %           - .y
-            %               In addition to the times the level of the new
-            %               value is returned.
+            %           - .hit_event_max
+            %               In addition to the transition times the level 
+            %               of the new value is returned. The starting time
+            %               and value are also returned. If the user
+            %               requests a limited time range the starting time
+            %               may not be 0.
+            %
             %       - 'time_series2'
+            %           - .hit_event_max
             %           - .x
             %           - .y
-            %                Each is replicated so that you can do plot(x,y)
+            %                Each point is replicated so that you can do 
+            %                plot(x,y) and it should look like it looks in
+            %                Spike 2.
+            %
             %       - 'switch_times'
+            %           - .hit_event_max
             %           - .rise_times
             %           - .fall_times
+            %               Times have been filtered into transitions from
+            %               low to high (rise) and high to low (fall)
+            %           
             %       - 'starts_and_stops'
+            %           - .hit_event_max
+            %           - .start_level
             %           - .start_high
             %           - .stop_high
             %           - .start_low
             %           - .stop_low
-            %           - .output_trimmed - this indicates that we may not
-            %                   have the full picture 
+            %
+            %               Each start and stop is paired. Note, because 
+            %               of time_range request, 
             %        
 
             in.return_format = 'times';
@@ -74,23 +93,26 @@ classdef event_both < ced.channel.channel
                 in.time_range = [0 obj.max_time];
                 end_time = obj.parent.n_seconds;
             else
-                end_time = obj.time_range(2);
+                end_time = in.time_range(2);
             end
 
             sample_range = round(in.time_range*obj.fs);
+            file_time = obj.parent.n_seconds;
+            last_file_sample = round(file_time*obj.fs);
             %Bounds check ...
             if sample_range(1) < 0 
                 error('error, invalid time requested')
             end
             
-            %TODO: This is an unfair check (I think) if we ask
-            %for a long period of time and we have few events early on
-            %
-            %i.e., this seems to only be valid for the last event, but
-            %the user shouldn't need to first check if there time window
-            %is within range of the last event
             if sample_range(2) > obj.n_ticks
-                error('error, invalid time requested')
+                %Note, n_ticks seems to be the last point that has 
+                %a switch. If the user requests past this point, that is
+                %OK, as long as they don't request past the end of the file
+                if sample_range(2) > last_file_sample
+                    error('error, invalid time requested')
+                else
+                    sample_range(2) = obj.n_ticks;
+                end
             end
 
             %Request is non-inclusive at the end so to be inclusive we
@@ -103,7 +125,7 @@ classdef event_both < ced.channel.channel
 
             %[ iRead, vi64T, iLevel ] = CEDS64ReadLevels( fhand, iChan, iN, i64From{i64UpTo} )
             %
-            %   TODO: rewrite for better allocation
+            %   TODO: rewrite for better allocation - low priority
             [iRead,vi64T,iLevel] = CEDS64ReadLevels(h2,obj.chan_id,in.max_events,t1,t2);
 
             iLevel = double(iLevel);
@@ -135,19 +157,35 @@ classdef event_both < ced.channel.channel
                     s.times = times;
                     s.start_level = iLevel;
                 case 'time_series1'
-                    s.x = times';
+                    %
+                    %   Return transition times along with the new value
+                    %   at that time. We also return the starting value and
+                    %   time.
+                    %
+                    s.x = [in.time_range(1) times'];
                     n_full = floor(length(times)/2);
                     n_extra = length(times) - n_full*2;
                     y2 = [1-iLevel iLevel];
                     if n_extra == 1
-                        s.y = [repmat(y2,1,n_full) y2(1)];
+                        s.y = [iLevel repmat(y2,1,n_full) y2(1)];
                     else
-                        s.y = repmat(y2,1,n_full);
+                        s.y = [iLevel repmat(y2,1,n_full)];
                     end
                 case 'time_series2'
-                    %# of events is
                     %
-                    % - each time is 2x
+                    %   In this case we want to allow plotting using
+                    %   standard plot() command
+                    %
+                    %   Note, technically you could do stairs() and get
+                    %   something similar.
+                    %
+                    %   To use plot() at each transition we need two values
+                    %   , 1 for the old value and one for the new value
+                    %
+                    %   We also need two additional points, one for the
+                    %   first point and one for the last point
+                    %
+                    % - each transition time is 2x
                     % - first and last is another 2x
                     n_xy = 2*length(times) + 2;
                     x = zeros(1,n_xy);
@@ -209,6 +247,7 @@ classdef event_both < ced.channel.channel
                         s.start_low = [in.time_range(1); times(2:2:end)];
                         s.stop_low = [times(1:2:end); low_last];
                     end
+                    s.start_level = iLevel;
             end
         end
     end

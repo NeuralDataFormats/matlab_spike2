@@ -26,6 +26,8 @@ classdef channel < handle
         fs
         offset
         scale
+
+        %Time divisor from main clock to this clock
         chan_div
         y_range
     end
@@ -45,8 +47,9 @@ classdef channel < handle
             [~,obj.name] = CEDS64ChanTitle(h2,chan_id);
             [~,obj.units] = CEDS64ChanUnits(h2,chan_id);
             obj.units = strtrim(obj.units);
-            obj.comment = CEDS64ChanComment(h2,chan_id);
+            [~,obj.comment] = CEDS64ChanComment(h2,chan_id);
 
+            %No error message output option, single output
             chan_div = CEDS64ChanDiv(h2,chan_id);
             obj.chan_div = chan_div;
             time_base = parent.time_base;

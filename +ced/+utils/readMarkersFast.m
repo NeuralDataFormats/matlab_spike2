@@ -7,12 +7,18 @@ function [n_read,c_markers] = readMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_
 %   See Also
 %   --------
 %   ced.channel.marker
+%   CEDS64ReadMarkers
 
 if growth_rate <= 1
     error('Invalid growth rate, needs to be > 1')
 end
 
 marker_output = ced.utils.getCEDMarkerStruct(n_init);
+
+%Unlike similar functions this does a bunch of reads at once
+%rather than reading one element
+%
+%   This probably restricts our read size
 lib_buffer = ced.utils.getCEDMarkerStruct(n_init);
 outmarkerpointer = libpointer('S64Marker', lib_buffer);
 
@@ -58,6 +64,9 @@ for n=1:n_max
     n_read = calllib('ceds64int', 'S64ReadMarkers', fhand, chan_id, ...
         outmarkerpointer , n_add, current_tick_time, tick2, maskcode);
 
+
+    %outmarkerpointer : lib.pointer    
+
     % [n_read,s3,sText] = ...
     %     calllib('ceds64int', 'S64Read1TextMark', fhand, chan_id, InMarker,...
     %         stringptr, current_tick_time, tick2, maskcode);
@@ -72,7 +81,20 @@ for n=1:n_max
         for m = i1:i2
             count = count + 1;
             temp = (outmarkerpointer + m);
-            %This is a struct
+            %temp : lib.pointer
+            %temp.value -> yields a structure with fields:
+            %m_Time
+            %m_Code1
+            %m_Code2
+            %m_Code3
+            %m_Code4
+        
+            %Note, we could do the renaming here:
+            %temp2 = temp.value
+            %s.time = temp2.m_Time
+            %s.code1 = temp2.m_Code1
+            %etc. 
+
             marker_output(count) = temp.value;
         end
         current_tick_time = marker_output(count).m_Time + 1;

@@ -1,4 +1,13 @@
 function [n_read,s] = readWaveMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_init,growth_rate)
+%
+%
+%
+%   See Also
+%   ---------
+%   CEDWaveMark
+%   ced.channel.wave_mark
+
+
 %CEDS64READEXTMARKS Reads extended marker data from a extended marker channels
 %   [ iRead, ExtMarkers ] = CEDS64ReadExtMarks( fhand, iChan, iN,  i64From {, i64To {, maskh}} )
 %   Inputs

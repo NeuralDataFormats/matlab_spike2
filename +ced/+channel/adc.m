@@ -224,6 +224,9 @@ start_time = start_sample/obj.fs;
 dt = double(1/obj.fs);
 n_samples_out = length(data);
 
+%From the PDF documentation
+%user value = (16-bit value) * scale /6553.6 + offset
+
 switch in.data_format
     case 'int16'
         %Done

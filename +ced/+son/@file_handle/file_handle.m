@@ -36,7 +36,8 @@ classdef file_handle < handle
         % 0: read and write
         % -1: try to open and read/write, if not use read-only
 
-            MODE = 1;
+            %read only
+            MODE = 1; 
        
             obj.h = CEDS64Open(file_path,MODE);
             if obj.h < 0

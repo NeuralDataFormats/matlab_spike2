@@ -1,6 +1,6 @@
 function loadLibrary()
 %
-%   ced.loadLibrary()
+%   ced.utils.loadLibrary()
 %
 %   Note this is called by ced.file if the library is not loaded
 %
@@ -20,9 +20,14 @@ function loadLibrary()
 %------------------------------------------
 p = which('CEDS64LoadLib');
 if isempty(p)
-    file_path = which('ced.loadLibrary');
-    repo_root = fileparts(fileparts(file_path));
+    file_path = which('ced.utils.loadLibrary');
+    repo_root = fileparts(fileparts(fileparts(file_path)));
     ced_code_root = fullfile(repo_root,'ced_provided_code','CEDS64ML');
+    %I moved the loadLibrary() function and this happened. Adding this
+    %check just in case.
+    if ~exist(ced_code_root,'dir')
+        error('Internal code error, CED folder is missing')
+    end
     addpath(ced_code_root);
     switch mexext
         case 'mexw64'

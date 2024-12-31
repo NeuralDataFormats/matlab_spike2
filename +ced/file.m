@@ -17,6 +17,19 @@ classdef file
         d = w.getData();
     %}
 
+    %{
+    Signal Types Status
+    ------------------------
+    ADC: ced.channel.adc
+    EventFall: ced.channel.event_rise_or_fall
+    EventRise: ced.channel.event_rise_or_fall
+    EventBoth: ced.channel.event_both
+    Marker: ced.channel.marker
+    WaveMark: ced.channel.wave_mark
+    RealMark: 
+
+    %}
+
     properties (Constant, Hidden)
         TYPE_NAME_MAP = {'ADC','EventFall','EventRise','EventBoth',...
                 'Marker','WaveMark','RealMark','TextMark'};
@@ -49,13 +62,16 @@ classdef file
         chan_type_string
         chan_names
 
-        waveforms
-        markers
+        waveforms ced.channel.adc
+        markers ced.channel.marker
         event_falls
         event_rises
         event_both
+        wave_markers ced.channel.wave_mark
+        real_markers
         text_markers
-        wave_markers
+        all_chan_objects
+        
         t
     end
 
@@ -67,7 +83,7 @@ classdef file
             %Load the necessary library if not yet loaded
             %-----------------------------------------------------
             if ~libisloaded('ceds64int')
-                ced.loadLibrary();
+                ced.utils.loadLibrary();
             end
 
             if isstring(file_path)
@@ -132,9 +148,11 @@ classdef file
                     case 1 %ADC - Waveform
                         t = ced.channel.adc(obj.h,i,obj);
                     case 2 %EventFall
-                        t = ced.channel.event_rise_or_fall(obj.h,i,obj);
+                        is_rise = false;
+                        t = ced.channel.event_rise_or_fall(obj.h,i,obj,is_rise);
                     case 3 %EventRise
-                        t = ced.channel.event_rise_or_fall(obj.h,i,obj);
+                        is_rise = true;
+                        t = ced.channel.event_rise_or_fall(obj.h,i,obj,is_rise);
                     case 4 %EventBoth
                         t = ced.channel.event_both(obj.h,i,obj);
                     case 5 %Marker
@@ -142,7 +160,7 @@ classdef file
                     case 6 %WaveMark
                         t = ced.channel.wave_mark(obj.h,i,obj);
                     case 7 %RealMark
-
+                        t = ced.channel.real_mark(obj.h,i,obj);
                     case 8 %TextMark
                         t = ced.channel.text_mark(obj.h,i,obj);
                     otherwise
@@ -183,11 +201,16 @@ classdef file
             temp = objs(chan_type_numeric == 5);
             obj.markers = [temp{:}];
 
+            temp = objs(chan_type_numeric == 6);
+            obj.wave_markers = [temp{:}];
+
+            temp = objs(chan_type_numeric == 7);
+            obj.real_markers = [temp{:}];
+
             temp = objs(chan_type_numeric == 8);
             obj.text_markers = [temp{:}];
 
-            temp = objs(chan_type_numeric == 6);
-            obj.wave_markers = [temp{:}];
+            obj.all_chan_objects = objs(chan_type_numeric ~= 0);
         end
     end
 end
