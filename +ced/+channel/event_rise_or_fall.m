@@ -31,7 +31,6 @@ classdef event_rise_or_fall < ced.channel.channel
                 obj.type = "fall";
             end
             
-            
             %??? CEDS64IdealRate
             %
             %   - this appears to be a buffer setting so
@@ -41,7 +40,7 @@ classdef event_rise_or_fall < ced.channel.channel
             h2 = obj.h.h;
             obj.ideal_rate = CEDS64IdealRate(h2,obj.chan_id);
         end
-        function times = getTimes(obj,varargin)
+        function times = getTimes(obj,in)
             %
             %
             %   Optional Inputs
@@ -55,11 +54,14 @@ classdef event_rise_or_fall < ced.channel.channel
             %       output array by this step size.
             %   
 
-            in.max_events = 1e6;
-            in.time_range = [0 obj.max_time];
-            in.n_init = 1000;
-            in.growth_rate = 2;
-            in = ced.sl.in.processVarargin(in,varargin);
+            arguments
+                obj ced.channel.event_rise_or_fall
+                in.time_format {mustBeMember(in.time_format,{'numeric','datetime'})} = 'numeric';
+                in.max_events (1,1) {mustBeNumeric} = 1e6
+                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
+                in.n_init (1,1) {mustBeNumeric} = 1000
+                in.growth_rate (1,1) {mustBeNumeric} = 2
+            end
 
             sample_range = round(in.time_range*obj.fs);
             %Bounds check ...
@@ -88,6 +90,21 @@ classdef event_rise_or_fall < ced.channel.channel
             end
 
             times = double(times)/obj.fs;
+
+        switch in.time_format
+            case 'datetime'
+                start_datetime = obj.parent.start_datetime;
+                if isnat(start_datetime)
+                    times = seconds(times);
+                else
+                    times = start_datetime + seconds(times);
+                end
+            case 'numeric'
+                %do nothing
+            otherwise
+                %Check is earlier so getting here indicates a bug in my code
+                error("Unrecognized 'time_format' option - bug in Jim's code")
+        end
 
         end
     end

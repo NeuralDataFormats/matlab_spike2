@@ -25,6 +25,7 @@ function [n_read,s] = readTextMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_init
 %   See Also
 %   --------
 %   ced.channel.text_mark.getData
+%   CEDS64ReadExtMarks
 %
 %   Warnings
 %   --------

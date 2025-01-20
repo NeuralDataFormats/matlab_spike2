@@ -1,15 +1,11 @@
 # Spike2 Interface for MATLAB #
 
-This code loads Spike2 files into MATLAB. It is a wrapper around the
-spike2matson library provided by CED and is meant to provide a slightly
-nicer interface to that library.
+This code loads Spike2 files into MATLAB. It is a wrapper around the spike2matson library provided by CED and is meant to provide a nicer interface to that library.
 
 **Note, this is a work in progress**
 
 # Remaining TODOs #
 
-- finish data loading for all waveform types - only a couple are currently supported
-- create repo with just example files
 - finish documentation
 - create some testing framework ...
 - There are a ton of places where we should be checking for errors but don't yet. The underlying mex returns error codes rather than directly throwing errors
@@ -24,6 +20,10 @@ https://www.mathworks.com/help/matlab/matlab_env/add-remove-or-reorder-folders-o
 Note, I personally add the path at startup using my *startup.m* file
 
 Do not add the '+ced' folder to the path.
+
+# Example Files #
+
+https://github.com/JimHokanson/spike2_example_files
 
 # Usage #
 

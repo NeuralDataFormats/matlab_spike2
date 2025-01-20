@@ -2,6 +2,11 @@ classdef real_mark < ced.channel.channel
     %
     %   Class:
     %   ced.channel.real_mark
+    %
+    %   See Also
+    %   --------
+    %   ced.channel.marker
+    %   ced.channel.wave_mark
 
     properties
         
@@ -17,19 +22,28 @@ classdef real_mark < ced.channel.channel
             obj.fs = 1/parent.time_base;
             obj.max_time = obj.n_ticks/obj.fs;
         end
-        function s = getData(obj,varargin)
+        function s = getData(obj,in)
             %
             %   Outputs
             %   -------
-            %   t
+            %   s 
+            %
+            %   Optional Inputs
+            %   ---------------
+            %   
+            %
+            %   See Also
+            %   --------
+            %   ced.channel.marker
 
-            in.wave_format = 'struct';
-            %   - matrix
-            in.max_events = 1e6;
-            in.time_range = [0 obj.max_time];
-            in.n_init = 1000;
-            in.growth_rate = 2;
-            in = ced.sl.in.processVarargin(in,varargin);
+            arguments
+                obj ced.channel.real_mark
+                in.return_format {mustBeMember(in.return_format,{'struct','struct2'})} = 'struct';
+                in.max_events (1,1) {mustBeNumeric} = 1e6
+                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
+                in.n_init (1,1) {mustBeNumeric} = 1000
+                in.growth_rate (1,1) {mustBeNumeric} = 2
+            end
 
             sample_range = round(in.time_range*obj.fs);
             %Bounds check ...
@@ -53,34 +67,44 @@ classdef real_mark < ced.channel.channel
             [n_read,s] = ced.utils.readRealMarkersFast(h2,obj.chan_id,in.max_events,t1,t2,in.n_init,in.growth_rate);
             %toc
 
+            %{
+            %Original version
+            %-----------------
+            %           CEDS64ReadExtMarks( fhand, iChan, iN,  i64From, i64To, maskh )
+            [n_read2,s2] = CEDS64ReadExtMarks(h2,obj.chan_id,in.max_events,t1,t2)
+            %}
 
-            %plot(t,wtf(1,:))
-
-            %Fix time
-            
             if n_read < 0
                 %TODO: Provide more details
                 error('Read error from ced.utils.readWaveMarkersFast')
             end
 
-            switch in.wave_format
+            %- No data scaling needed
+            %- Time scaling
+            temp = {s.time};
+            temp2 = cellfun(@(x) x/obj.fs,temp,'un',0);
+            [s.time] = deal(temp2{:});
+            
+            switch in.return_format
                 case 'struct'
                     %do nothing
-                case 'matrix'
+                case 'struct2'
+                    s2 = struct;
+                    temp = {s.data};
+                    %Do we ever have a matrix? Why is our example [2 x 1]
+                    %and not a scalar?
+                    %
+                    %Do we ever have more than one column?
+                    s2.data = cat(3,temp{:});
+                    s2.time = [s.time];
+                    s2.code1 = [s.code1];
+                    s2.code2 = [s.code2];
+                    s2.code3 = [s.code3];
+                    s2.code4 = [s.code4];
+                    s = s2;
+                otherwise
+                    error('Unrecognized option')
             end
-
-            keyboard
-            %{
-            tic
-            [n_read,s] = CEDS64ReadExtMarks(h2,obj.chan_id, 1e6, 0);
-            toc
-            %}
-
-                        %{
-            [ iRead, vMObj ] = CEDS64ReadExtMarks( fhand, iChan, iN, i64From{, i64To{,
-            maskh}} )
-            %}
-
 
         end
     end

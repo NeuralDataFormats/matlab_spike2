@@ -7,6 +7,11 @@ classdef wave_mark < ced.channel.channel
     %
     %   A Wave Marker consists of events and snippets (sampled data over
     %   a brief time window)
+    %
+    %   See Also
+    %   --------
+    %   ced.channel.marker
+    %   
 
     properties
 
@@ -32,7 +37,7 @@ classdef wave_mark < ced.channel.channel
             %
             %   Optional Inputs
             %   ---------------
-            %   output_format :
+            %   return_format :
             %       - struct
             %       - matrix1 - each trace is in its own matrix
             %       - matrix2 - [samples x trace x time]
@@ -40,6 +45,10 @@ classdef wave_mark < ced.channel.channel
             %   Improvements
             %   ------------
             %   Handle returning codes ...
+            %
+            %   See Also
+            %   --------
+            %   ced.channel.marker
 
             arguments
                 obj ced.channel.wave_mark
@@ -48,24 +57,7 @@ classdef wave_mark < ced.channel.channel
                 in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
                 in.n_init (1,1) {mustBeNumeric} = 1000
                 in.growth_rate (1,1) {mustBeNumeric} = 2
-
-                % in.to_char = obj.name == "Keyboard"
-                % in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
-                % in.collapse_struct = true
-                % in.n_init (1,1) {mustBeNumeric}= 1000
-                % in.growth_rate (1,1) {mustBeNumeric} = 2
-                % in.max_events = 1e6
             end
-
-
-
-            % in.return_format = 'struct';
-            % %   - matrix
-            % in.max_events = 1e6;
-            % in.time_range = [0 obj.max_time];
-            % in.n_init = 1000;
-            % in.growth_rate = 2;
-            % in = ced.sl.in.processVarargin(in,varargin);
 
             sample_range = round(in.time_range*obj.fs);
             %Bounds check ...
@@ -91,7 +83,7 @@ classdef wave_mark < ced.channel.channel
             %{
             %format: [ iRead, vMObj ] = CEDS64ReadExtMarks( fhand, iChan, iN, i64From{, i64To{, maskh}} )
             tic
-            [ iRead, ExtMarkers ] = CEDS64ReadExtMarks( h2, obj.chan_id, 1e6,  t1, t2 )
+            [ iRead, ExtMarkers ] = CEDS64ReadExtMarks( h2, obj.chan_id, in.max_events,  t1, t2 )
             toc
             %}
 
@@ -147,14 +139,6 @@ classdef wave_mark < ced.channel.channel
                     s2.times = [s.time];
                     s = s2;
             end
-
-
-                        %{
-            
-            %}
-
-
         end
-
     end
 end

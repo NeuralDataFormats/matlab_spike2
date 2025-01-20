@@ -25,31 +25,25 @@ classdef text_mark < ced.channel.channel
             obj.fs = 1/parent.time_base;
             obj.max_time = obj.n_ticks/obj.fs;
         end
-        function t = getData(obj,varargin)
-            %CEDS64ReadExtMarks
-            %{
+        function t = getData(obj,in)
+            %
+            %   t = getData(obj,in)
+            %   
+            %   Optional Inputs
+            %   ---------------
+            %   return_format
+            %       - table
+            %       - No other options implemented
+            %   
 
-            function [ iRead, ExtMarkers ] = CEDS64ReadExtMarks( fhand, iChan, iN,  i64From, i64To, maskh )
-            %CEDS64READEXTMARKS Reads extended marker data from a extended marker channels
-            %   [ iRead, ExtMarkers ] = CEDS64ReadExtMarks( fhand, iChan, iN,  i64From {, i64To {, maskh}} )
-            %   Inputs
-            %   fhand - An integer handle to an open file
-            %   iChan - A channel number for an extended event channel
-            %   iN - The maximum number of data points to read
-            %   i64From - The time in ticks of the earliest time you want to read
-            %   i64To - (Optional) The time in ticks of the latest time you want to
-            %   read. If not set or set to -1, read to the end of the channel
-            %   maskh -  (Optional) An integer handle to a marker mask
-            %   Outputs
-            %   iRead - The number of data points read or a negative error code
-            %   ExtMarkers - An array of CED64Markers
-            %}
-
-            in.max_events = 1e6;
-            in.time_range = [0 obj.max_time];
-            in.n_init = 1000;
-            in.growth_rate = 2;
-            in = ced.sl.in.processVarargin(in,varargin);
+            arguments
+                obj ced.channel.text_mark
+                in.return_format {mustBeMember(in.return_format,{'table'})} = 'table';
+                in.max_events (1,1) {mustBeNumeric} = 1e6
+                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
+                in.n_init (1,1) {mustBeNumeric} = 1000
+                in.growth_rate (1,1) {mustBeNumeric} = 2
+            end
             
             sample_range = round(in.time_range*obj.fs);
             %Bounds check ...
@@ -63,7 +57,6 @@ classdef text_mark < ced.channel.channel
             %Request is non-inclusive at the end so to be inclusive we
             %add 1 to the sample count
             sample_range(2) = sample_range(2) + 1;
-            
 
             t1 = sample_range(1);
             t2 = sample_range(2);

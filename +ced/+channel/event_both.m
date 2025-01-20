@@ -29,7 +29,7 @@ classdef event_both < ced.channel.channel
             h2 = obj.h.h;
             obj.ideal_rate = CEDS64IdealRate(h2,obj.chan_id);
         end
-        function s = getTimes(obj,varargin)
+        function s = getTimes(obj,in)
             %
             %
             %   Outputs
@@ -77,14 +77,16 @@ classdef event_both < ced.channel.channel
             %
             %               Each start and stop is paired. Note, because 
             %               of time_range request, 
-            %        
+            %     
 
-            in.return_format = 'times';
-            in.max_events = 1e6;
-            in.time_range = [];
-            in.n_init = 1000;
-            in.growth_rate = 2;
-            in = ced.sl.in.processVarargin(in,varargin);
+            arguments
+                obj ced.channel.event_both
+                in.return_format {mustBeMember(in.return_format,{'times','time_series1','time_series2','switch_times','starts_and_stops'})} = 'times';
+                in.max_events (1,1) {mustBeNumeric} = 1e6
+                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
+                in.n_init (1,1) {mustBeNumeric} = 1000
+                in.growth_rate (1,1) {mustBeNumeric} = 2
+            end
 
             if isempty(in.time_range)
                 %

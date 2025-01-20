@@ -65,9 +65,9 @@ classdef marker < ced.channel.channel
 
             arguments
                 obj ced.channel.marker
+                in.collapse_struct = true
                 in.to_char = obj.name == "Keyboard"
                 in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
-                in.collapse_struct = true
                 in.n_init (1,1) {mustBeNumeric}= 1000
                 in.growth_rate (1,1) {mustBeNumeric} = 2
                 in.max_events = 1e6

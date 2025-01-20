@@ -19,7 +19,7 @@ classdef adc < ced.channel.channel
             %Floor? ceil? round?
             obj.n_ticks = ceil(parent.n_ticks/obj.chan_div);
         end
-        function d = getData(obj,varargin)
+        function d = getData(obj,in)
             %
             %
             %
@@ -45,13 +45,14 @@ classdef adc < ced.channel.channel
             %
             %   Optional Inputs
             %   ---------------
-            %   data_format: default 'data'
+            %   data_format: default 'double'
             %       - 'int16'
             %       - 'single'
             %       - 'double'
-            %       - 'data' - return data object if code is available
+            %       - 'data_object' - return data object if code is available
             %                  otherwise return double
-            %   time_format: default 'datetime'
+            %   time_format: default ''
+            %       - ''         - no time returned
             %       - 'datetime' - Note if the file does not have a valid
             %                      starting datetime this will return data
             %                      in the format of a duration array
@@ -68,69 +69,27 @@ classdef adc < ced.channel.channel
             %   ------------
             %   - complete documentation
 
-            %{
-            Example 1
-            ---------
-            
-
-            Example 2
-            ---------
-            %Has multiple waveforms ...
-            name = 'Demo1.smr';
-            root = "D:\Data\Mickle\sample_files";
-            file = ced.file(fullfile(root,name));
-    
-            d = file.waveforms(1).getData();
-            clf
-            hold on
-            for i = 1:length(d)
-                plot(d(i).time,d(i).data)
-            end
-            hold off
-
-
-
-            %}
-
-            in.n_snips_init = 1e4;
-            in.n_snips_growth_rate = 2; %NYI
-            in.return_time_arrays = true;
-            in.data_format = 'double';
-            in.time_format = 'datetime';
-            in.time_range = [];
-            in = ced.sl.in.processVarargin(in,varargin);
-
-            if in.data_format == "data"
-                if isempty(which('sci.time_series.data'))
-                    in.data_format = 'double';
-                end
-            end
-            if in.return_time_arrays
-                %Early check that the format is allowed
-                switch in.time_format
-                    case 'datetime'
-                    case 'numeric'
-                    otherwise
-                        error('Unrecognized "time_format" option: %s',in.time_format)
-                end
+            arguments
+                obj ced.channel.adc
+                in.n_init (1,1) {mustBeNumeric} = 1e4
+                in.growth_rate (1,1) {mustBeNumeric} = 2
+                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
+                in.time_format {mustBeMember(in.time_format,{'','numeric','datetime'})} = 'numeric'
+                in.return_format {mustBeMember(in.return_format,{'int16','single','double','data_object'})} = 'double'    
             end
 
+            if in.return_format == "data_object" && isempty(which('sci.time_series.data'))
+                in.return_format = 'double';
+            end
 
-            %From the PDF documentation
-            %user value = (16-bit value) * scale /6553.6 + offset
-
-            %CEDS64ReadWaveS Read waveform data as 16-bit integers
-            %CEDS64ReadWaveF Read waveform
-
-            %n_samples = ceil(obj.max_time*obj.fs);
             n_samples = obj.n_ticks;
 
             if ~isempty(in.time_range)
-                %TODO: Verify time range
                 s1 = round(in.time_range(1)*obj.fs);
                 if s1 < 0
                     error('Invalid time range requested')
                 end
+
                 %Add 1 to make time inclusive - call to
                 %their function is not inclusive
                 s2 = round(in.time_range(2)*obj.fs) + 1;
@@ -149,7 +108,7 @@ classdef adc < ced.channel.channel
             %s2 - stop sample id (0 based)
             %       - or last sample to get (1 based)
 
-            output = cell(1,in.n_snips_init);
+            output = cell(1,in.n_init);
             I = 0;
             while true
                 s = h__DataRetrieval(obj,s1,s2,in,n_samples);
@@ -182,12 +141,6 @@ classdef adc < ced.channel.channel
                 end
             end
 
-            %TODO: We may want to do structure copies rather than
-            %concetantion of scalars
-            %
-            %   output(I) = s  %Where output is a structure array
-            %
-            %   rather than this - not sure of efficiency here
             d = [output{1:I}];
 
         end
@@ -202,7 +155,6 @@ s2_in = s2*obj.chan_div;
 
 %Data call
 %-------------------------
-%
 %Request is in ticks, which is not samples
 %thus the scaling above by chan_div
 %
@@ -227,7 +179,10 @@ n_samples_out = length(data);
 %From the PDF documentation
 %user value = (16-bit value) * scale /6553.6 + offset
 
-switch in.data_format
+%CEDS64ReadWaveS Read waveform data as 16-bit integers
+%CEDS64ReadWaveF Read waveform
+
+switch in.return_format
     case 'int16'
         %Done
     case 'single'
@@ -240,7 +195,7 @@ switch in.data_format
         %conversion is worse than the conversion from
         %int16 to double
         data = double(data)*(obj.scale/6553.6) + obj.offset;
-    case 'data'
+    case 'data_object'
         %Note, we have a check earlier that switches the 'data_format'
         %if this library does not exist
         data = double(data)*(obj.scale/6553.6) + obj.offset;
@@ -270,7 +225,12 @@ s.last_sample_id = last_sample;
 s.start_time = start_time;
 s.n_samples = n_samples_out;
 
-if in.return_time_arrays
+if in.time_format == "" || in.return_format == "data_object"
+    s.time = [];
+    %- If data object, part of the point of the object is to not return
+    %a second array of time points
+    %- "" means 
+else
     s.time = (start_sample:last_sample)./obj.fs;
     switch in.time_format
         case 'datetime'

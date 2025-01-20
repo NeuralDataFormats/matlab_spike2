@@ -2,20 +2,16 @@ classdef file
     %
     %   Class:
     %   ced.file
-
-    %{
-        root = 'D:\Data\Mickle';
-        file_name = '03192024_20single_20void_20stimulation.smrx';
-        file_path = fullfile(root,file_name);
-        file = ced.file(file_path);
-
-        name = 'Demo_Jim.smrx';
-        root = 'D:\Data\Mickle\sample_files';
-        file = ced.file(fullfile(root,name));
-
-        w = file.waveforms(1);
-        d = w.getData();
-    %}
+    %
+    %   See Also
+    %   --------
+    %   ced.channel.adc
+    %   ced.channel.event_rise_or_fall
+    %   ced.channel.event_both
+    %   ced.channel.marker
+    %   ced.channel.wave_mark
+    %   ced.channel.real_mark
+    %   ced.channel.text_mark
 
     %{
     Signal Types Status
@@ -26,7 +22,8 @@ classdef file
     EventBoth: ced.channel.event_both
     Marker: ced.channel.marker
     WaveMark: ced.channel.wave_mark
-    RealMark: 
+    RealMark: ced.channel.real_mark
+    TextMark: ced.channel.text_mark
 
     %}
 
@@ -64,15 +61,36 @@ classdef file
 
         waveforms ced.channel.adc
         markers ced.channel.marker
-        event_falls
-        event_rises
-        event_both
+        event_falls ced.channel.event_rise_or_fall
+        event_rises ced.channel.event_rise_or_fall
+        event_both ced.channel.event_both
         wave_markers ced.channel.wave_mark
-        real_markers
-        text_markers
+        real_markers ced.channel.real_mark
+        text_markers ced.channel.text_mark
+        
+        %cell array of objects, in channel order
         all_chan_objects
         
+        %table
         t
+    end
+
+    methods (Static)
+        function t = getEmptyTypeSummary()
+            %
+            %   t = ced.file.getEmptyTypeSummary();
+
+            t = table;
+            t.adc = -1;
+            t.event_fall = -1;
+            t.event_rise = -1;
+            t.event_both = -1;
+            t.marker = -1;
+            t.wave_marker = -1;
+            t.real_marker = -1;
+            t.text_marker = -1;
+
+        end
     end
 
     methods
@@ -89,6 +107,9 @@ classdef file
             if isstring(file_path)
                 %calls to library don't support strings, only char array
                 file_path = char(file_path);
+            elseif isstruct(file_path)
+                d = file_path;
+                file_path = fullfile(d.folder,d.name);
             end
 
             [~,obj.file_name] = fileparts(file_path);
@@ -187,30 +208,57 @@ classdef file
             %Filtering out specicic channel types into properties
             %--------------------------------------------
             temp = objs(chan_type_numeric == 1);
-            obj.waveforms = [temp{:}];
+            if ~isempty(temp)
+                obj.waveforms = [temp{:}];
+            end
 
             temp = objs(chan_type_numeric == 2);
-            obj.event_falls = [temp{:}];
+            if ~isempty(temp)
+                obj.event_falls = [temp{:}];
+            end
 
             temp = objs(chan_type_numeric == 3);
-            obj.event_rises = [temp{:}];
+            if ~isempty(temp)
+                obj.event_rises = [temp{:}];
+            end
 
             temp = objs(chan_type_numeric == 4);
-            obj.event_both = [temp{:}];
+            if ~isempty(temp)
+                obj.event_both = [temp{:}];
+            end
 
             temp = objs(chan_type_numeric == 5);
-            obj.markers = [temp{:}];
+            if ~isempty(temp)
+                obj.markers = [temp{:}];
+            end
 
             temp = objs(chan_type_numeric == 6);
-            obj.wave_markers = [temp{:}];
+            if ~isempty(temp)
+                obj.wave_markers = [temp{:}];
+            end
 
             temp = objs(chan_type_numeric == 7);
-            obj.real_markers = [temp{:}];
+            if ~isempty(temp)
+                obj.real_markers = [temp{:}];
+            end
 
             temp = objs(chan_type_numeric == 8);
-            obj.text_markers = [temp{:}];
+            if ~isempty(temp)
+                obj.text_markers = [temp{:}];
+            end
 
             obj.all_chan_objects = objs(chan_type_numeric ~= 0);
+        end
+        function t = getTypeSummary(obj)
+            t = table;
+            t.adc = length(obj.waveforms);
+            t.event_fall = length(obj.event_falls);
+            t.event_rise = length(obj.event_rises);
+            t.event_both = length(obj.event_both);
+            t.marker = length(obj.markers);
+            t.wave_marker = length(obj.wave_markers);
+            t.real_marker = length(obj.real_markers);
+            t.text_marker = length(obj.text_markers);
         end
     end
 end

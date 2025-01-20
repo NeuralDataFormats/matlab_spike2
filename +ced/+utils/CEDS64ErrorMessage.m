@@ -22,6 +22,8 @@ switch iErrorCode
         errmsg = 'NO_CHANNEL: A channel does not exist.';
     case -10
         errmsg = 'CHANNEL_USED: Attempt to reuse a channel that already exists.';
+    case -13
+        errmsg = '-13 WRONG_FILE Attempt to open wrong file type. This is not a SON file.';
     case -21
         errmsg = 'READ_ONLY: Failed to open a read-only file for writing';
     otherwise
