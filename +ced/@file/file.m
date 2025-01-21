@@ -33,6 +33,7 @@ classdef file
     end
 
     properties
+        file_path
         file_name
 
         h
@@ -111,6 +112,8 @@ classdef file
                 d = file_path;
                 file_path = fullfile(d.folder,d.name);
             end
+
+            obj.file_path = file_path;
 
             [~,obj.file_name] = fileparts(file_path);
 

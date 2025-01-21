@@ -73,8 +73,9 @@ classdef adc < ced.channel.channel
                 obj ced.channel.adc
                 in.n_init (1,1) {mustBeNumeric} = 1e4
                 in.growth_rate (1,1) {mustBeNumeric} = 2
-                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
-                in.time_format {mustBeMember(in.time_format,{'','numeric','datetime'})} = 'numeric'
+                in.time_range (:,:) {h__sizeCheck(in.time_range)} = []
+                in.sample_range (:,:) {h__sizeCheck(in.sample_range)} = []
+                in.time_format {mustBeMember(in.time_format,{'none','numeric','datetime'})} = 'numeric'
                 in.return_format {mustBeMember(in.return_format,{'int16','single','double','data_object'})} = 'double'    
             end
 
@@ -87,26 +88,68 @@ classdef adc < ced.channel.channel
             if ~isempty(in.time_range)
                 s1 = round(in.time_range(1)*obj.fs);
                 if s1 < 0
-                    error('Invalid time range requested')
+                    error('Invalid time range requested, t1 too early')
                 end
 
                 %Add 1 to make time inclusive - call to
                 %their function is not inclusive
-                s2 = round(in.time_range(2)*obj.fs) + 1;
-                if s2 > obj.n_ticks
-                    error('Invalid time range requested')
+                %
+                %   requesting 0 to 10 returns 0 to 9
+                s2 = round(in.time_range(2)*obj.fs)-1;
+                if s2 >= obj.n_ticks
+                    error('Invalid time range requested, t2 too late')
                 end
                 if s1 > s2
-                    error('Invalid time range requested')
+                    error('Invalid time range requested, t1 > t2')
                 end
+            elseif ~isempty(in.sample_range)
+                s1 = in.sample_range(1);
+                s2 = in.sample_range(2);
+                if s1 < 1
+                    error('Invalid time range requested, s1 too early')
+                end
+                %Fix inclusivity request, add 1
+                %s2 = s2 + 1;
+                if s2 > obj.n_ticks
+                    error('Invalid sample range requested, s2 too late')
+                end
+                if s1 > s2
+                    error('Invalid sample range requested, s1 > s2')
+                end
+                s1 = s1-1;
+                s2 = s2-1;
             else
                 s1 = 0;
-                s2 = n_samples;
+                s2 = n_samples-1;
             end
 
             %s1 - first sample to get, 0 based
             %s2 - stop sample id (0 based)
             %       - or last sample to get (1 based)
+
+
+            %Note, waveforms can have pauses. Whether there are pauses in
+            %the data is not obvious based on any header information. Thus 
+            %we ready the requested range. If any pauses are encountered
+            %this is handled. 
+            % 
+            %I believe if we request data over the range of a pause it
+            %returns only the data up to the pause. If our first sample
+            %is in a pause, it advances to the next sample. Thus for
+            %example you might have something like this:
+            %
+            %   data  xxxxx   xxxxxxx  xxxxxxx
+            %         1                            2 (1 start, 2 stop)
+            %   returned
+            %         xxxxx
+            %   next       1                       2
+            %   returned
+            %                 xxxxxxx
+            %   next                 1             2
+            %   returned
+            %                          xxxxxxx
+            %   next                          1    2
+            %   returned - no data, must be done
 
             output = cell(1,in.n_init);
             I = 0;
@@ -146,12 +189,20 @@ classdef adc < ced.channel.channel
         end
     end
 end
+function h__sizeCheck(var)
+if ~(isequal(size(var),[1 2]) || isempty(var))
+    error('Variable must be empty or have size [1 x 2]')
+end
+end
 
 function s = h__DataRetrieval(obj,s1,s2,in,n_samples)
 
 %Conversion from samples to ticks
 s1_in = s1*obj.chan_div;
 s2_in = s2*obj.chan_div;
+
+%Request may not be inclusive
+s2_in = s2_in + 1;
 
 %Data call
 %-------------------------
@@ -170,7 +221,7 @@ s2_in = s2*obj.chan_div;
 %Note, ints generally cause bugs in MATLAB so let's convert to double
 %
 %   ASSUMES: we don't have super large data > 9e15 elements
-start_sample = double(start_tick/obj.chan_div + 1);
+start_sample = double(start_tick/obj.chan_div) + 1;
 last_sample = double(start_sample + length(data)-1);
 start_time = start_sample/obj.fs;
 dt = double(1/obj.fs);
@@ -225,10 +276,10 @@ s.last_sample_id = last_sample;
 s.start_time = start_time;
 s.n_samples = n_samples_out;
 
-if in.time_format == "" || in.return_format == "data_object"
+if in.time_format == "none" || in.return_format == "data_object"
     s.time = [];
-    %- If data object, part of the point of the object is to not return
-    %a second array of time points
+    %- If returning a data object, part of the point of the object is to 
+    % not return a second array of time points (i.e., to save memory)
     %- "" means 
 else
     s.time = (start_sample:last_sample)./obj.fs;
