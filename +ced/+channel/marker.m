@@ -96,6 +96,13 @@ classdef marker < ced.channel.channel
             [n_read,s] = ced.utils.readMarkersFast(...
                 h2,obj.chan_id,in.max_events,t1,t2,in.n_init,in.growth_rate);
             %toc
+            %{
+            tic
+            for i = 1:100
+            [ iRead, cMarkers ] = CEDS64ReadMarkers( h2, obj.chan_id,100000,0);
+            end
+            toc/100
+            %}
 
             if n_read < 0
                 %TODO: Provide more documentation on the error code
@@ -103,18 +110,19 @@ classdef marker < ced.channel.channel
             end
 
             if in.collapse_struct
-                s = struct;
-                s.times = [s.m_Time]/obj.fs;
-                s.c1 = [s.m_Code1];
-                s.c2 = [s.m_Code2];
-                s.c3 = [s.m_Code3];
-                s.c4 = [s.m_Code4];
+                s2 = struct;
+                s2.times = [s.m_Time]/obj.fs;
+                s2.c1 = [s.m_Code1];
+                s2.c2 = [s.m_Code2];
+                s2.c3 = [s.m_Code3];
+                s2.c4 = [s.m_Code4];
                 if in.to_char
-                    s.c1 = char(s.c1);
-                    s.c2 = char(s.c2);
-                    s.c3 = char(s.c3);
-                    s.c4 = char(s.c4);
+                    s2.c1 = char(s2.c1);
+                    s2.c2 = char(s2.c2);
+                    s2.c3 = char(s2.c3);
+                    s2.c4 = char(s2.c4);
                 end
+                s = s2;
             else
 
                 %https://www.mathworks.com/matlabcentral/answers/273955-how-do-i-rename-fields-of-a-structure-array
