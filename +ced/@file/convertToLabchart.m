@@ -27,7 +27,7 @@ function convertToLabchart(obj)
 
         max_times(i) = cur_waveform.max_time;
         fs(i) = cur_waveform.fs;
-        last_samples(i) = cur_waveform.n_ticks;
+        last_samples(i) = cur_waveform.n_ticks-1;
     end
 
     %For now we assume one big long record ....
