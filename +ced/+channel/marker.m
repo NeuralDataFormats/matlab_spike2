@@ -3,6 +3,8 @@ classdef marker < ced.channel.channel
     %   Class:
     %   ced.channel.marker
     %
+    %   The most common 'marker' is Keyboard.
+    %
     %   What is the marker?
     %
     %   What is the difference between a marker and an event rise or fall?
@@ -25,7 +27,15 @@ classdef marker < ced.channel.channel
             obj@ced.channel.channel(h,chan_id,parent);
 
             obj.fs = 1/parent.time_base;
+
             obj.max_time = obj.n_ticks/obj.fs;
+
+            %Above may actually be correct.
+            %n_ticks is -1 in one example file
+            %- switching to using max time from the parent
+            % % % % obj.max_time = obj.parent.n_seconds;
+            % % % % 
+            % % % % obj.n_ticks = obj.parent.n_ticks;
         end
         function s = getData(obj,in)
             %
@@ -66,11 +76,11 @@ classdef marker < ced.channel.channel
             arguments
                 obj ced.channel.marker
                 in.collapse_struct = true
-                in.to_char = obj.name == "Keyboard"
-                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
-                in.n_init (1,1) {mustBeNumeric}= 1000
                 in.growth_rate (1,1) {mustBeNumeric} = 2
                 in.max_events = 1e6
+                in.n_init (1,1) {mustBeNumeric}= 1000
+                in.to_char = obj.name == "Keyboard"
+                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
             end
 
             %in = ced.sl.in.processVarargin(in,varargin);

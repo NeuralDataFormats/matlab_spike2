@@ -29,12 +29,14 @@ classdef file
 
     properties (Constant, Hidden)
         TYPE_NAME_MAP = {'ADC','EventFall','EventRise','EventBoth',...
-                'Marker','WaveMark','RealMark','TextMark'};
+            'Marker','WaveMark','RealMark','TextMark'};
     end
 
     properties
         file_path
         file_name
+
+        meta_file
 
         h
 
@@ -68,10 +70,10 @@ classdef file
         wave_markers ced.channel.wave_mark
         real_markers ced.channel.real_mark
         text_markers ced.channel.text_mark
-        
+
         %cell array of objects, in channel order
         all_chan_objects
-        
+
         %table
         t
     end
@@ -80,6 +82,19 @@ classdef file
         function t = getEmptyTypeSummary()
             %
             %   t = ced.file.getEmptyTypeSummary();
+            %
+            %
+            %   Outputs
+            %   -------
+            %   t : struct
+            %       .adc = -1
+            %       .event_fall = -1
+            %       .event_rise = -1
+            %       .event_both = -1
+            %       .marker = -1
+            %       .wave_marker = -1
+            %       .real_marker = -1
+            %       .text_marker = -1
 
             t = table;
             t.adc = -1;
@@ -90,7 +105,6 @@ classdef file
             t.wave_marker = -1;
             t.real_marker = -1;
             t.text_marker = -1;
-
         end
     end
 
@@ -115,7 +129,21 @@ classdef file
 
             obj.file_path = file_path;
 
-            [~,obj.file_name] = fileparts(file_path);
+            [root,obj.file_name,file_ext] = fileparts(file_path);
+
+            if file_ext == ".s2rx"
+                %ASSUMPTION: Assuming smr is the only valid option?
+                file_path = fullfile(root,[obj.file_name,'.smr']);
+                if ~exist(file_path,"file")
+                    error('s2rx file is not a valid SON file')
+                end
+            end
+
+            %s2rx check
+            s2rx_path = fullfile(root,[obj.file_name,'.s2rx']);
+            if exist(s2rx_path,'file')
+                obj.meta_file = ced.s2rx_file(s2rx_path);
+            end
 
             obj.h = ced.son.file_handle(file_path);
             obj.version = ced.son.version(obj.h);
@@ -125,7 +153,7 @@ classdef file
 
             %CEDS64FileSize
             obj.file_size = CEDS64FileSize(h2);
-            
+
             %5 comments allowed
             file_comments = cell(1,8);
             for i = 1:8
@@ -135,7 +163,7 @@ classdef file
             end
             mask = cellfun('isempty',file_comments);
             obj.file_comments = file_comments(~mask);
-            
+
             obj.n_ticks = CEDS64MaxTime(h2);
 
             %Format is:
@@ -164,7 +192,7 @@ classdef file
             %   is to iterate through all (i.e., can't skip to specific
             %   channels that are in use)
             for i = 1:n_chans_max
-                chan_type_numeric(i) = CEDS64ChanType(h2,i);  
+                chan_type_numeric(i) = CEDS64ChanType(h2,i);
 
                 t = struct('name','unusued');
                 switch chan_type_numeric(i)
@@ -253,6 +281,25 @@ classdef file
             obj.all_chan_objects = objs(chan_type_numeric ~= 0);
         end
         function t = getTypeSummary(obj)
+            %X Returns # of elements of each type as a struct
+            %
+            %   t = getTypeSummary(obj)
+            %
+            %   Inputs
+            %   ------
+            %
+            %   Outputs
+            %   -------
+            %   t : struct
+            %       .adc
+            %       .event_fall
+            %       .event_rise
+            %       .event_both
+            %       .marker
+            %       .wave_marker
+            %       .real_marker
+            %       .text_marker
+
             t = table;
             t.adc = length(obj.waveforms);
             t.event_fall = length(obj.event_falls);
@@ -262,6 +309,151 @@ classdef file
             t.wave_marker = length(obj.wave_markers);
             t.real_marker = length(obj.real_markers);
             t.text_marker = length(obj.text_markers);
+        end
+        function chans = getChannels(obj, names, options)
+            %GETCHANNELS  Retrieve channel objects by name from a channel container
+            %
+            %   chans = getChannels(obj, names)
+            %   chans = getChannels(obj, names, options)
+            %
+            %   Inputs
+            %   ------
+            %   obj : channel container object
+            %       Object with properties:
+            %           - all_chan_objects : cell array of channel objects
+            %           - chan_names       : cellstr of channel names
+            %
+            %   names : char | cellstr | string
+            %       One or more channel names to search for.
+            %
+            %   Optional Inputs (Name-Value)
+            %   ----------------------------
+            %   case_sensitive : logical, default = false
+            %       Controls whether name matching is case-sensitive.
+            %           false  - 'EEG' matches 'eeg', 'Eeg', etc.  (default)
+            %           true   - 'EEG' matches 'EEG' only
+            %
+            %   partial_match : 'anywhere' | 'start' | false, default = true
+            %       Controls how the search term is matched against channel names.
+            %           'anywhere' - search term may appear anywhere in the name
+            %                        e.g. 'EEG' matches 'raw_EEG_01'
+            %           'start'    - name must begin with the search term
+            %                        e.g. 'EEG' matches 'EEG_01' but not 'raw_EEG'
+            %           false      - full exact match required
+            %                        e.g. 'EEG' matches 'EEG' only
+            %
+            %   missing : 'error' | 'warning', default = 'error'
+            %       Behaviour when a requested channel name is not found.
+            %           'error'   - throws an error and halts execution  (default)
+            %           'warning' - issues a warning and continues, returning []
+            %                       for any unmatched entry in chans
+            %
+            %   Outputs
+            %   -------
+            %   chans : cell array (n_names x 1)
+            %       Cell array of channel objects corresponding to each entry in
+            %       names. Unmatched entries are [] when missing = 'warning'.
+            %
+            %   Examples
+            %   --------
+            %   % Return the first channel whose name contains 'EEG' (case-insensitive)
+            %   chans = obj.getChannels('EEG');
+            %
+            %   % Exact, case-sensitive lookup of multiple channels
+            %   chans = obj.getChannels({'EEG_01','EMG_01'}, ...
+            %                            case_sensitive = true, ...
+            %                            partial_match  = false);
+            %
+            %   % Warn instead of error when a channel is missing
+            %   chans = obj.getChannels({'EEG_01','BAD_NAME'}, missing = 'warning');
+
+            arguments
+                obj
+                names
+                options.case_sensitive = false;
+                options.partial_match  = true;
+                %   'anywhere' | 'start' | false
+                options.missing
+            end
+
+            if isstring(names) || ischar(names)
+                names = cellstr(names);
+            end
+
+            n_chans = length(names);
+            chan_output = cell(1,n_chans);
+
+            if ~options.case_sensitive
+                compare_names = lower(obj.chan_names);
+            else
+                compare_names = obj.chan_names;
+            end
+
+            %For each channel, find the match
+            %-------------------------------------------
+            for i = 1:n_chans
+
+                if ~options.case_sensitive
+                    search_term = lower(names{i});
+                else
+                    search_term = names{i};
+                end
+
+                % Find the channel index using the requested match strategy
+                switch options.partial_match
+                    case 'anywhere'
+                        % True wherever search_term appears inside the channel name
+                        match_index = find(contains(compare_names, search_term), 1);
+
+                    case 'start'
+                        % True only when the channel name begins with search_term
+                        match_index = find(startsWith(compare_names, search_term), 1);
+
+                    otherwise   % false -> exact match
+                        match_index = find(strcmp(compare_names, search_term), 1);
+                end
+
+                % Guard against no match
+                if isempty(match_index)
+                    if options.missing == "error"
+                        error('getChannels:notFound', ...
+                            'No channel found matching "%s".', names{i});
+                    else
+                        warning('getChannels:notFound', ...
+                            'No channel found matching "%s".', names{i});
+                    end
+                    chan_output{i} = [];
+                else
+                    chan_output{i} = obj.all_chan_objects{match_index};
+                end
+
+            end
+
+            chans = chan_output;
+
+        end
+        function plot(obj,options)
+            %
+            %
+
+            arguments
+                obj
+                options.chan_names = []
+            end
+
+            if isempty(options.chan_names)
+                options.chan_names = obj.chan_names;
+            end
+
+            %TODO: Pass into a channel plotting method
+            %
+            %   - this would allow people to grab channels
+            %   and plot them directly via a method call
+
+            %Vertical channels
+            %- text_markers - Note Spike2 does not plot vertically
+            %
+
         end
     end
 end

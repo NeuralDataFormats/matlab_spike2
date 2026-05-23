@@ -37,6 +37,7 @@ outmarkerpointer
 n_add = n_init;
 count = 0;
 current_tick_time = tick1;
+n_read = 0;
 
 for n=1:n_max
     if (current_tick_time >= tick2)

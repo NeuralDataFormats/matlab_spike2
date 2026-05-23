@@ -1,15 +1,18 @@
 classdef text_mark < ced.channel.channel
-    %
-    %   TODO: consider inheriting from an event channel
-    %   
+    %      
     %   Class:
     %   ced.channel.text_mark
+    %
+    %   
     %
     %   A Text Marker channel contains discrete points in times. Each point
     %   in time contains:
     %   - the time value itself
     %   - a string (e.g., a comment)
     %   - 4 codes - ??? What are these?
+
+
+    %   TODO: Consider inheriting from an event channel
 
     properties
 
@@ -26,23 +29,48 @@ classdef text_mark < ced.channel.channel
             obj.max_time = obj.n_ticks/obj.fs;
         end
         function t = getData(obj,in)
+            %X method to retrieve data
             %
             %   t = getData(obj,in)
             %   
+            %   Outputs
+            %   -------
+            %   t : 
+            %       .text - the comment
+            %       .time - time in seconds since start of file
+            %       .code1 - can be used to encode special info
+            %       .code2
+            %       .code3
+            %       .code4
+            %
             %   Optional Inputs
             %   ---------------
-            %   return_format
+            %   return_format :
             %       - table
             %       - No other options implemented
+            %   max_events : default 1e6
+            %       Maximum number of events to return.
+            %   time_range : [min_time,max_time] default [0,max_time]
+            %       The range over which events should be returned.
+            %
+            %   Advanced Optional Inputs
+            %   ------------------------
+            %   n_init : default 1000
+            %       Starting guess for # of events. This impacts memory
+            %       allocation. In general
+            %   growth_rate : default 2
+            %       Should be larger than 1. If the # of events exceeds
+            %       the initial guess, or subsequent guesses, how much
+            %       to expand the memory by.
             %   
 
             arguments
                 obj ced.channel.text_mark
-                in.return_format {mustBeMember(in.return_format,{'table'})} = 'table';
-                in.max_events (1,1) {mustBeNumeric} = 1e6
-                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
-                in.n_init (1,1) {mustBeNumeric} = 1000
                 in.growth_rate (1,1) {mustBeNumeric} = 2
+                in.max_events (1,1) {mustBeNumeric} = 1e6
+                in.n_init (1,1) {mustBeNumeric} = 1000
+                in.return_format {mustBeMember(in.return_format,{'table'})} = 'table';
+                in.time_range (1,2) {mustBeNumeric} = [0 obj.max_time]
             end
             
             sample_range = round(in.time_range*obj.fs);

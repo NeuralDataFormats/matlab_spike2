@@ -1,7 +1,19 @@
-classdef channel < handle
+classdef channel < handle & matlab.mixin.Heterogeneous
     %
     %   Class:
     %   ced.channel.channel
+    %
+    %
+    %   Channel Types
+    %   -------------
+    %   ced.channel.adc
+    %   ced.channel.event_rise_or_fall
+    %   ced.channel.event_both
+    %   -- Marker Types --
+    %   ced.channel.marker
+    %   ced.channel.wave_mark
+    %   ced.channel.real_mark
+    %   ced.channel.text_mark
 
     %{
     Calls not yet handled

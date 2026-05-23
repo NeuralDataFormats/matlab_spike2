@@ -36,6 +36,22 @@ classdef file_handle < handle
         % 0: read and write
         % -1: try to open and read/write, if not use read-only
 
+
+            %JAH: 2026-03-14 - It is not clear to me that this mode
+            %actually works since I can't open read-only when the file
+            %is open in Spike2
+            %
+            %   ??? Does -1 work? No, and the error message is strange:
+            %  
+            %   :-------- READ ONLY  ------------:
+            %   READ_ONLY: Failed to open a read-only file for writing
+            %
+            %   :-------- RW or on failure READ ONLY ------------:
+            %   NO_FILE: Attempt to use when file not open, or use of an invalid file
+            %   handle, or no spare file handle
+            %   
+            %
+            %
             %read only
             MODE = 1; 
        

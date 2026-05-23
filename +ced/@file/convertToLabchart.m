@@ -1,4 +1,12 @@
 function convertToLabchart(obj)
+%X Converts the file to a LabChart file
+%
+%   Requirements
+%   ------------
+%   https://github.com/JimHokanson/adinstruments_sdk_matlab
+%   
+%   JAH: 2026-03-14 - not sure if this function is finished :/
+%   
 
     WRITE_SIZE = 30; %seconds
 
