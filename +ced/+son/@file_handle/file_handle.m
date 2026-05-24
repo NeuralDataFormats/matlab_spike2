@@ -23,18 +23,18 @@ classdef file_handle < handle
     methods
         function obj = file_handle(file_path)
 
-        %CEDS64OPEN Opens an exiting SON file
-        %   [ fhand ] = CEDS64Open( sFileName {, iMode} )
-        %   Inputs
-        %   sFileName - String contain the path and file of the file we wish to
-        %   iMode - (Optional) 1= read only, 0 = read and write, -1 try to open as
-        %   read write, if that fails try to open a read only open
-        %   Outputs
-        %   fhand - An integer handle for the file, otherwise a negative error code.
-        
-        % 1: read only
-        % 0: read and write
-        % -1: try to open and read/write, if not use read-only
+            %CEDS64OPEN Opens an exiting SON file
+            %   [ fhand ] = CEDS64Open( sFileName {, iMode} )
+            %   Inputs
+            %   sFileName - String contain the path and file of the file we wish to
+            %   iMode - (Optional) 1= read only, 0 = read and write, -1 try to open as
+            %   read write, if that fails try to open a read only open
+            %   Outputs
+            %   fhand - An integer handle for the file, otherwise a negative error code.
+
+            % 1: read only
+            % 0: read and write
+            % -1: try to open and read/write, if not use read-only
 
 
             %JAH: 2026-03-14 - It is not clear to me that this mode
@@ -42,23 +42,34 @@ classdef file_handle < handle
             %is open in Spike2
             %
             %   ??? Does -1 work? No, and the error message is strange:
-            %  
+            %
             %   :-------- READ ONLY  ------------:
             %   READ_ONLY: Failed to open a read-only file for writing
             %
             %   :-------- RW or on failure READ ONLY ------------:
             %   NO_FILE: Attempt to use when file not open, or use of an invalid file
             %   handle, or no spare file handle
-            %   
+            %
             %
             %
             %read only
-            MODE = 1; 
-       
+
+
+            %Note, for some reason some .smr files that open in Spike2
+            %fail to open with this code and throw an error -13, saying
+            %that the file is not a valid SON file.
+
+            MODE = 1;
+
             obj.h = CEDS64Open(file_path,MODE);
             if obj.h < 0
+                %JAH 2026-05-23: What if we are trying to write? OK to be
+                %missing? Check if folder exists?
+                if ~exist(file_path,'file')
+                   error('CED:file_handle:missing_file','Unable to open requested file:\n"%s"\nreason from CED lib:\n%s',file_path,msg) 
+                end
                 msg = ced.utils.CEDS64ErrorMessage(obj.h);
-                error('Unable to open requested file:\n"%s"\nreason from CED lib:\n%s',file_path,msg)
+                error('CED:file_handle:open_failure','Unable to open requested file:\n"%s"\nreason from CED lib:\n%s',file_path,msg)
             end
         end
         function delete(obj)
