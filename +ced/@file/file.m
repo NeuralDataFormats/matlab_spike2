@@ -281,16 +281,19 @@ classdef file
             obj.all_chan_objects = objs(chan_type_numeric ~= 0);
         end
         function t = getTypeSummary(obj)
-            %X Returns # of elements of each type as a struct
+            %X Returns # of elements of each type as a table
             %
             %   t = getTypeSummary(obj)
+            %
+            %   If you iterate over a bunch of files you can 
+            %   get a nice table 
             %
             %   Inputs
             %   ------
             %
             %   Outputs
             %   -------
-            %   t : struct
+            %   t : table
             %       .adc
             %       .event_fall
             %       .event_rise
