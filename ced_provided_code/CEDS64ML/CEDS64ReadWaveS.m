@@ -53,7 +53,13 @@ else
     maskcode = maskh;
 end
 
+% fprintf('>> CEDS64ReadWaveS(fhand=%d, iChan=%d, iN=%d, i64From=%d, i64To=%d, maskh=%d)\n', ...
+%     fhand, iChan, iN, i64From, i64To, maskcode);
+
 [iRead, i16Vals, i64Time] = calllib('ceds64int', 'S64ReadWaveS', fhand, iChan, outshortpointer, iN, i64From, i64To, outtimepointer, maskcode);
+
+% fprintf('<< CEDS64ReadWaveS returned iRead=%d, i64Time=%d, length(i16Vals)=%d\n', ...
+%     iRead, i64Time, length(i16Vals));
 
 if iRead > 0 
     i16Vals(iRead+1:end) = [];
