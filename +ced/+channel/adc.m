@@ -8,7 +8,7 @@ classdef adc < ced.channel.channel
     %   ced.file
 
     properties
-
+        n_samples
     end
 
     methods
@@ -18,6 +18,9 @@ classdef adc < ced.channel.channel
             %Is this only true for waveform?
             %Floor? ceil? round?
             obj.n_ticks = ceil(parent.n_ticks/obj.chan_div);
+
+            %TODO: Get rid of n_ticks
+            obj.n_samples = obj.n_ticks;
         end
         function d = getData(obj,in)
             %
@@ -33,7 +36,9 @@ classdef adc < ced.channel.channel
             %       .n_samples
             %       .time - Note this is only returned if
             %               'return_time_arrays' is true
-            %           
+            %        
+            %   PAUSE/GAP NOTE
+            %   --------------
             %   Note, a channel can have multiple gaps. Unfortunately the
             %   only way to determine if there is a gap is to read the data
             %   and to find gaps. 
@@ -63,7 +68,16 @@ classdef adc < ced.channel.channel
             %   the starting datetime in that object will be of MATLAB type
             %   'datetime' rather than numeric.
             %
-            %   time_range
+            %   time_range : [start stop] default not used
+            %       
+            %   sample_range : [start stop] default not used
+            %       
+            %   n_init : default 1e4
+            %       # of segments expected. Often times this is only 1
+            %   growth_rate : default 2
+            %       If the # of segments exceeds the allocated size
+            %       then the allocation will increase (get multipled) by
+            %       this value.
             %
             %   Improvements
             %   ------------
@@ -83,8 +97,6 @@ classdef adc < ced.channel.channel
                 in.return_format = 'double';
             end
 
-            n_samples = obj.n_ticks;
-
             if ~isempty(in.time_range)
                 s1 = round(in.time_range(1)*obj.fs);
                 if s1 < 0
@@ -96,7 +108,8 @@ classdef adc < ced.channel.channel
                 %
                 %   requesting 0 to 10 returns 0 to 9
                 s2 = round(in.time_range(2)*obj.fs)-1;
-                if s2 >= obj.n_ticks
+
+                if s2 >= obj.n_samples
                     error('Invalid time range requested, t2 too late')
                 end
                 if s1 > s2
@@ -110,7 +123,7 @@ classdef adc < ced.channel.channel
                 end
                 %Fix inclusivity request, add 1
                 %s2 = s2 + 1;
-                if s2 > obj.n_ticks
+                if s2 > obj.n_samples
                     error('Invalid sample range requested, s2 too late')
                 end
                 if s1 > s2
@@ -120,7 +133,7 @@ classdef adc < ced.channel.channel
                 s2 = s2-1;
             else
                 s1 = 0;
-                s2 = n_samples-1;
+                s2 = obj.n_samples-1;
             end
 
             %s1 - first sample to get, 0 based
@@ -154,7 +167,7 @@ classdef adc < ced.channel.channel
             output = cell(1,in.n_init);
             I = 0;
             while true
-                s = h__DataRetrieval(obj,s1,s2,in,n_samples);
+                s = h__DataRetrieval(obj,s1,s2,in,obj.n_samples);
                 if s.n_samples == 0
                     %No more data left, stop asking!!
                     break
@@ -177,7 +190,8 @@ classdef adc < ced.channel.channel
                     %Data storage and check for completeness
                     %-----------------------------------------
                     output{I} = s;
-                    s1 = s.last_sample_id;
+
+                    s1 = s.last_sample_id+1;
                     if s1 >= s2
                         break
                     end
