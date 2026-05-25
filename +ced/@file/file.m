@@ -70,6 +70,7 @@ classdef file
         wave_markers ced.channel.wave_mark
         real_markers ced.channel.real_mark
         text_markers ced.channel.text_mark
+        real_waves ced.channel.real_wave
 
         %cell array of objects, in channel order
         all_chan_objects
@@ -105,6 +106,7 @@ classdef file
             t.wave_marker = -1;
             t.real_marker = -1;
             t.text_marker = -1;
+            t.real_wave = -1;
         end
     end
 
@@ -158,6 +160,10 @@ classdef file
             file_comments = cell(1,8);
             for i = 1:8
                 [iOk,temp] = CEDS64FileComment(h2,i);
+                if iOk < 0
+                    err_msg = ced.utils.CEDS64ErrorMessage(iErrorCode);
+                    error('CED:File:Comment',err_msg)
+                end
                 %TODO: Check iOk
                 file_comments{i} = temp;
             end
@@ -215,6 +221,8 @@ classdef file
                         t = ced.channel.real_mark(obj.h,i,obj);
                     case 8 %TextMark
                         t = ced.channel.text_mark(obj.h,i,obj);
+                    case 9 %RealWave
+                        t = ced.channel.real_wave(obj.h,i,obj);
                     otherwise
                         error('Unexpected channel type: %d',chan_type_numeric(i))
                 end
@@ -278,6 +286,11 @@ classdef file
                 obj.text_markers = [temp{:}];
             end
 
+            temp = objs(chan_type_numeric == 9);
+            if ~isempty(temp)
+                obj.real_waves = [temp{:}];
+            end
+
             obj.all_chan_objects = objs(chan_type_numeric ~= 0);
         end
         function t = getTypeSummary(obj)
@@ -302,6 +315,7 @@ classdef file
             %       .wave_marker
             %       .real_marker
             %       .text_marker
+            %       .real_wave
 
             t = table;
             t.adc = length(obj.waveforms);
@@ -312,6 +326,7 @@ classdef file
             t.wave_marker = length(obj.wave_markers);
             t.real_marker = length(obj.real_markers);
             t.text_marker = length(obj.text_markers);
+            t.real_wave = length(obj.real_waves);
         end
         function chans = getChannels(obj, names, options)
             %GETCHANNELS  Retrieve channel objects by name from a channel container
