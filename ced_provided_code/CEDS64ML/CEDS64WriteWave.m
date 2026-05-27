@@ -22,13 +22,15 @@
 function [ i64ETime ] = CEDS64WriteWave( fhand, iChan, Wave, i64STime )
 %CEDS64WRITEWAVE Writes a vector of 16-bit integers or 32-bit floats to a waveform channel
 %   [ i64ETime ] = CEDS64WriteWave(  fhand, iChan, i16Wave, i64STime )
+%
 %   Inputs
+%   ------
 %   fhand - An integer handle to an open file
 %   iChan - An integer channel number
 %   Wave - A vector of 16-bit integers or floating-point values
 %   i64STime - The time in ticks of the first point
 %   Outputs
-%   i64ETime - If successful, the time in ticks of the next item after the 
+%   i64ETime - If successful, the time in ticks of the next item after the
 %   final one written, otherwisr a negative error message
 
 if (nargin ~= 4)
@@ -40,12 +42,12 @@ n = length(Wave);
 if (isinteger(Wave))
     Wave = int16(Wave);
     i64ETime = calllib('ceds64int', 'S64WriteWaveS', fhand, iChan, Wave, n, i64STime);
-else if(isfloat(Wave))
-        Wave = single(Wave);
-        i64ETime = calllib('ceds64int', 'S64WriteWaveF', fhand, iChan, Wave, n, i64STime);
-    else
-        i64ETime = -22;
-    end
+elseif(isfloat(Wave))
+    Wave = single(Wave);
+    i64ETime = calllib('ceds64int', 'S64WriteWaveF', fhand, iChan, Wave, n, i64STime);
+else
+    i64ETime = -22;
 end
 end
+
 

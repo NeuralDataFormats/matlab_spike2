@@ -21,7 +21,7 @@
 
 classdef CEDMarker < handle
     
-    properties (GetAccess = public, SetAccess = private)
+    properties (GetAccess = public, SetAccess = protected)
         m_Time;
         m_Code1;
         m_Code2;
@@ -102,6 +102,15 @@ classdef CEDMarker < handle
             else
                 err = - 22;
             end
+        end
+
+        function s = struct(obj)
+            s = struct;
+            s.m_Time = obj.m_Time;
+            s.m_Code1 = obj.m_Code1;
+            s.m_Code2 = obj.m_Code2;
+            s.m_Code3 = obj.m_Code3;
+            s.m_Code4 = obj.m_Code4;
         end
         
         function [ r, c ] = Size(obj)

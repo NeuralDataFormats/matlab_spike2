@@ -1,6 +1,6 @@
 function [n_read,s] = readRealMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_init,growth_rate)
 %
-%   [n_read,s] = readRealMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_init,growth_rate)
+%   [n_read,s] = ced.utils.readRealMarkersFast(fhand,chan_id,n_max,tick1,tick2,n_init,growth_rate)
 %
 %   See Also
 %   --------
@@ -69,7 +69,13 @@ for n = 1:n_max
         s(n).code2 = OutMarker.m_Code2;
         s(n).code3 = OutMarker.m_Code3;
         s(n).code4 = OutMarker.m_Code4;
-        s(n).data = reshape(dReal, Rows, Cols);
+
+        %Is this wrong or is CEDS64WriteExtMarks wrong?
+        %s(n).data = reshape(dReal, Rows, Cols);
+
+        %Transpose?
+        %s(n).data = dReal;
+        s(n).data = reshape(dReal, Cols, Rows)';
         current_tick_time = OutMarker.m_Time + 1;
     else
         break;

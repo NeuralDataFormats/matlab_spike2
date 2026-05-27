@@ -21,6 +21,10 @@ classdef adc < ced.channel.channel
 
             %TODO: Get rid of n_ticks
             obj.n_samples = obj.n_ticks;
+
+            %JAH: 2026-05 - found this bug in round-trip testing
+            %Not sure why this is off by 1?
+            obj.n_samples = obj.n_samples + 1;
         end
         function d = getData(obj,in)
             %
