@@ -1,3 +1,5 @@
 
 *.asv
 *.asv
+/test_code/*.smrx
+/test_code/*.s2rx

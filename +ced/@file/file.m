@@ -29,7 +29,7 @@ classdef file
 
     properties (Constant, Hidden)
         TYPE_NAME_MAP = {'ADC','EventFall','EventRise','EventBoth',...
-            'Marker','WaveMark','RealMark','TextMark'};
+            'Marker','WaveMark','RealMark','TextMark','RealWave'};
     end
 
     properties

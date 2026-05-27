@@ -59,7 +59,14 @@ classdef CEDRealMark < CEDMarker
         function D = GetData(obj)
             D = obj.m_Data;
         end
-        
+        function s = struct(obj)
+            s.m_Data = obj.m_Data;
+            s.m_Time = obj.m_Time;
+            s.m_Code1 = obj.m_Code1;
+            s.m_Code2 = obj.m_Code2;
+            s.m_Code3 = obj.m_Code3;
+            s.m_Code4 = obj.m_Code4;
+        end
         function err = SetData(obj, Reals)
             err = 0;
             if (isnumeric(Reals) && ismatrix(Reals))

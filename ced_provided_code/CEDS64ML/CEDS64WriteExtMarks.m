@@ -68,7 +68,13 @@ for n=1:N
     % we use transpose as it is needed for multitrace wavemarks to
     % get the column (trace) values properly interleaved, and does
     % no harm to the other forms of extended marker data
+    
+    %JAH: Is this wrong or is the reader wrong?
+    %reader: ced.utils.readRealMarkersFast
     Data = reshape(transpose(vMarkers(n).m_Data), [], 1 );
+
+
+
     nSize = length(Data);
     % make sure Data is not too large for the channel
     switch (rType)
