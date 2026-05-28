@@ -388,10 +388,12 @@ classdef file
             arguments
                 obj
                 names
-                options.case_sensitive = false;
-                options.partial_match  = true;
+                options.case_sensitive = false
+
+                %TODO: Update to ismember support
+                options.partial_match {h__mustBePartialMatchOption} = 'anywhere'
                 %   'anywhere' | 'start' | false
-                options.missing
+                options.missing = 'error'
             end
 
             if isstring(names) || ischar(names)
@@ -473,5 +475,11 @@ classdef file
             %
 
         end
+    end
+end
+
+function h__mustBePartialMatchOption(val)
+    if ~(isequal(val, false) || ismember(val, ["anywhere", "start"]))
+        error('Value must be "anywhere", "start", or false.');
     end
 end

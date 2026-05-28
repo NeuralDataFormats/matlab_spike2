@@ -6,6 +6,8 @@ classdef real_wave < ced.channel.channel
     % RealWave channels are continuous waveform channels stored as
     % floating-point values rather than int16 ADC values.
     %
+    %   TODO: Consider merging with ADC given strong overlap.
+    %
     % See Also
     % --------
     % ced.channel.adc
@@ -26,7 +28,7 @@ classdef real_wave < ced.channel.channel
             % obj.n_ticks is the channel max time in file ticks.
             % obj.chan_div converts sample index <-> file ticks.
             obj.n_ticks = ceil(parent.n_ticks / obj.chan_div);
-            obj.n_samples = obj.n_ticks;
+            obj.n_samples = obj.n_ticks + 1;
         end
 
         function d = getData(obj, in)
