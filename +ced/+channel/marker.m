@@ -172,12 +172,6 @@ classdef marker < ced.channel.channel
     end
 end
 
-function h__
-
-end
-
-
-
 %{
 function [ iRead, i64Times ] = CEDS64ReadEvents( fhand, iChan, iN, i64From, i64To, maskh )
 %CEDS64READEVENTS Reads the first iN events from channel iChan between i64From and i64To
